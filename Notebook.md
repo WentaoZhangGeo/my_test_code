@@ -1,4 +1,10 @@
 Online Collaboration Tools, such as google, GitHub, ownCloud,and so on.
 --
-sudo apt update && sudo apt upgrade
-sudo apt autoremove
+<p>sudo apt update</p>
+<p>sudo apt upgrade</p>
+<p>sudo apt autoremove</p>
+
+gedit ~/.bashrc
+
+<pre><code>export PATH=./:$PATH
+</code></pre>
