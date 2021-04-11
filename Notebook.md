@@ -10,7 +10,8 @@ conda deactivate</p>
 
 git config -l --show-origin<br>
 git config --global user.name wentao<br>
-git config --global user.name
+git config --global user.name<br>
+gnome-screenshot -a<br>
 
 gedit ~/.bashrc
 <pre><code>export PATH=./:$PATH
