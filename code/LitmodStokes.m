@@ -35,10 +35,13 @@ TopoIn=load('topo.inp');
 % Amount of timesteps
 stepmax=2;
 
-AirThickness = 100000.0;    % m   Sticky air / km
+AirThickness = 100000.0;    % Sticky air / m
 AirTypeNumber = -10;        % 
 AirDensity = 1000;          % kg/m3
 AirViscosity = 1e18;        % Pa s
+
+ExtendDistance = 100000.0;  % m
+
 
 % Velocity Boundary condition specified by bleft,bright,btop,bbot 
 % (1=free slip -1=no slip) are implemented from ghost nodes 
@@ -53,6 +56,7 @@ xsize = (LitMod(end,1)-LitMod(1,1))*1000;
 ysize = abs(LitMod(end,2)-0)*1000;
 % xsize=1070000;
 % ysize= 400000;
+xsize = xsize + ExtendDistance*2;
 ysize = ysize + AirThickness;
 
 %% nodes
@@ -117,15 +121,17 @@ MVY=zeros(mynum,mxnum);
 MV=zeros(mynum,mxnum);
 
 %% Defining lithological structure of the model LitMod 
-TopoYLit_x=TopoIn(:,1);
+TopoYLit_x=TopoIn(:,1)*1000 + ExtendDistance;
 TopoYLit_y=TopoIn(:,2);
-TopoYLit = interp1(TopoYLit_x*1000,TopoYLit_y,MX(1,:));
+TopoYLit = interp1(TopoYLit_x,TopoYLit_y,MX(1,:),'nearest','extrap');
 
-X=LitMod(:,1)*1000;
+X=LitMod(:,1)*1000 + ExtendDistance;
 Y=-LitMod(:,2)*1000 + AirThickness;
 
 sii0=1e-15;
 MEII=MEII*sii0;
+% Acceleration of Gravity, m/s^2
+g=9.8;
 
 for xm = 1:1:mxnum
     for ym = 1:1:mynum 
@@ -135,7 +141,7 @@ for xm = 1:1:mxnum
         MI(ym,xm)=LitMod(num,8);
         MRHO(ym,xm)=LitMod(num,7);
         MTK(ym,xm)=LitMod(num,3);
-        MPR(ym,xm)=LitMod(num,4);
+        MPR(ym,xm)=LitMod(num,4)+AirDensity*g*AirThickness;
         
         if MI(ym,xm)==31
             MI(ym,xm)=75;
@@ -143,16 +149,17 @@ for xm = 1:1:mxnum
         if MY(ym,xm)<AirThickness - 1*TopoYLit(xm)
             MI(ym,xm)=AirTypeNumber;
             MRHO(ym,xm)=AirDensity;
+            
+            MPR(ym,xm)=AirDensity*g*MY(ym,xm);
         end
         
 %         META(ym,xm)=Viscosity_Material(MTK(ym,xm),MPR(ym,xm),MEII(ym,xm),MI(ym,xm));
         
     end
 end
-
+MPR_LitMod=MPR;
 %% setting parameter
-% Acceleration of Gravity, m/s^2
-g=9.8;
+
 % Pressure in the upermost, leftmost (first) cell
 prfirst=0;
 
