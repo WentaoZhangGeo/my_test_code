@@ -5,36 +5,63 @@ Created on Thu Jun 17 18:14:31 2021
 
 @author: wzhang
 """
-       
 
-# Cell-Particles Projections
+from __future__ import division
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-from scipy import linalg
+# from scipy import linalg
+from scipy.sparse.linalg import spsolve
+from scipy.io import loadmat
+# import scipy.io as scio
 
-import scipy.io as scio
-import pandas as pd
-import matplotlib.pyplot as plt
+#########################################
+MRHO = np.zeros(100)
+META = np.zeros(100)
+
+#########################################
+# Acceleration of Gravity, m/s^2
+g=9.81
+# Pressure in the upermost, leftmost [first ] cell
+prfirst=0
+# Rock density [kg/m3 ], viscosity [Pa s ]
+# Medium
+MRHO[1 ]=3200.0
+META[1 ]=1e+21
+# Block
+MRHO[2 ]=3300.0
+META[2 ]=1e+27
+
+# Maximal timestep, s
+timemax=1e+8*[365.25*24*3600 ]
+# Maximal marker displacement step, number of gridsteps
+markmax=0.5
+# Amount of timesteps
+stepmax=100
+
+# Model size, m
+xsize=500000
+ysize=500000
+
+# Velocity Boundary condition specified by bleft,bright,btop,bbot
+# [1=free slip -1=no slip ] are implemented from ghost nodes
+# directly into Stokes and continuity equations
+bleft=1
+bright=1
+btop=1
+bbottom=1
+
+# Defining resolution
+xnum=51
+ynum=51
+
+# Defining gridsteps
+xstp=xsize/(xnum-1 )
+ystp=ysize/(ynum-1 )
 
 
-from pylab import rcParams
+def main():
+    pass
 
-LitModOutputName='post_processing_output.dat';
-LitMod=np.loadtxt(LitModOutputName);
-
-
-
-# Solve matrix
-# S=L\R;
-dataFile = '/home/wzhang/ownCloud/Stoke/CH21_online/saveA.mat'
-# dataFile = '/home/ictja/Music/stokes/120km2/Air120km_Step9.mat'
-data = scio.loadmat(dataFile)
-
-
-L = data['L']
-R = data['R']
-S = data['S']
-
-XX = linalg.solve(L, R)
-# x = linalg.solve(a, b)
+if __name__ == '__main__':
+    main()
+    
