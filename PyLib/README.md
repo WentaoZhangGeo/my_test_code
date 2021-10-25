@@ -1,44 +1,10 @@
 # Readme
-sadas
 
-zc
----
+**0PyBasic.ipynb**
+Python & Jupyter 常用的规则、函数库和快捷键
+ 
+**1Py_vs_Mat.ipynb**
+Matlab & Python 对求解大型稀疏矩阵不同方法的对比
 
-
-Those are some codes about how o use python.
-### fsdjfjk
-
-```
-# code block
-print '3 backticks or'
-print 'indent 4 spaces'
-```
-$\prod \alpha \measuredangle \sqsubseteq \hat{\imath }$
-
-
-\begin{equation}\label{eqs:imcompress}
-    \frac{\partial \sigma_{y y}^{\prime}}{\partial y}+
-    \frac{\partial \sigma_{y x}^{\prime}}{\partial x}-
-    \frac{\partial P}{\partial y}+\rho g_{y}=0\tag{1}
-\end{equation}
-
-
-This leads us to the following \eqref{eqs:imcompress}.
-sdfsdf
-## fsdjfjk
-
-Readme
----------
-
-sadasd
-
-sad
---
-sdasd
-
-adsad
-
-sadas
-
-# fsdjfjk
-asdsad
+**2PythonPlot.md**
+Python 绘图的常见命令
