@@ -22,7 +22,7 @@ print(1.1+2.2)
 False
 ```
 
-可以使用 ![decimal](https://docs.python.org/zh-cn/3/library/decimal.html) 模块进行修改，支持十进制浮点运算以提供完全精确的计算，满足高精度要求。简单例子：
+可以使用 [decimal](https://docs.python.org/zh-cn/3/library/decimal.html) 模块进行修改，支持十进制浮点运算以提供完全精确的计算，满足高精度要求。简单例子：
 
 ```python
 from decimal import Decimal
