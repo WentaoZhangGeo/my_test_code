@@ -10,24 +10,27 @@ Using github in Pycharm
 github常见命令:
 ========
 ```bash
-# 下载一个项目和它的整个代码历史
-$ git clone https://github.com/wzhang1994/my_test_code
-# 检查是否有变更的文件
-$ git status
-
-
 # 显示当前的Git配置
-$ git config --list
+git config --list
 # 编辑Git配置文件
-$ git config -e [--global]
+git config -e [--global]
+
+# 下载一个项目和它的整个代码历史
+git clone https://github.com/wzhang1994/my_test_code
+# 检查是否有变更的文件
+cd $Repository_dir$ # 进入仓库的目录
+git status
+
 # 设置提交代码时的用户信息
-$ git config --global user.name "w**"
-$ git config --global user.email "z******.com@gmail.com"
+git config --global user.name "w**"
+git config --global user.email "z******.com@gmail.com"
 
-
+# 新文件提交到缓冲区，但注意并没有提交到远程仓库
 git add .
+# 备注新文件的信息
+git commit -m 
+git pull
 
-git pull origin master
 
 1.  打开 Gitbash
 2.  使用 `cd` 命令用于切换到对应仓库的目录，`cd ..` 用于切换到上级目录，`ls` 用于查看当前目录下面的文件/夹
