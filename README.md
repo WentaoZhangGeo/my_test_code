@@ -9,7 +9,7 @@ Using github in Pycharm
 1. 安装git
 `sudo apt install git`
 2. 配置git
-+ 本地计算机配置用户名和邮箱
+2.1 本地计算机配置用户名和邮箱
 ```bash
 # 显示当前的Git配置
 git config --list
@@ -32,13 +32,13 @@ cat ~/.ssh/id_rsa.pub
 gedit ~/.ssh/id_rsa.pub
 ```
 + 本地计算机配置SSH
-- 登录github官网，网址：https://github.com/
-- 右上角 登陆后点击settings->SSH and GPS keys->New SSH key
-- 将id_rsa.pub文件中的内容全部复制到key中，输入title，点击Add SSH key 即可。
+	- 登录github官网，网址：https://github.com/
+	- 右上角 登陆后点击settings->SSH and GPS keys->New SSH key
+	- 将id_rsa.pub文件中的内容全部复制到key中，输入title，点击Add SSH key 即可。
 
-- 最后检查下本地是否与github连接成功 `ssh -T git@github.com` 选择yes即可
-- SSH用法 `git clone git@github.com:wzhang1994/Log.git`
--  或者 `git clone https://github.com/wzhang1994/Log`
+	- 最后检查下本地是否与github连接成功 `ssh -T git@github.com` 选择yes即可
+	- SSH用法 `git clone git@github.com:wzhang1994/Log.git`
+	-  或者 `git clone https://github.com/wzhang1994/Log`
 
 + 配置个人访问令牌
 - 登录github官网，网址：https://github.com/
