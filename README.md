@@ -31,15 +31,28 @@ cat ~/.ssh/id_rsa.pub
 # 或者
 gedit ~/.ssh/id_rsa.pub
 ```
-**GitHub上配置SSH**
-- 登录git官网，网址：https://github.com/。
+**配置SSH**
+- 登录github官网，网址：https://github.com/
 - 右上角 登陆后点击settings->SSH and GPS keys->New SSH key
 - 将id_rsa.pub文件中的内容全部复制到key中，输入title，点击Add SSH key 即可。
 
 - 最后检查下本地是否与github连接成功 `ssh -T git@github.com` 选择yes即可
 - SSH用法 `git clone git@github.com:wzhang1994/Log.git`
+-  或者 `git clone https://github.com/wzhang1994/Log`
 
+**配置个人访问令牌**
+- 登录github官网，网址：https://github.com/
+- 右上角 登陆后点击settings->Developer settings(最后一行)->Personal access tokens, 根据需要选择和填写，密码只显示一次，请保存好
+- 避免同一个仓库每次提交代码都要输入token，把token直接添加远程仓库链接中
+```bash
+git remote set-url origin https://<your_token>@github.com/<USERNAME>/REPO
+```
+<your_token>：换成你自己得到的token
 
+<USERNAME>：是你自己github的用户名
+
+<REPO>：是你的仓库名称
+- 
 
 **注意**: 从 2021 年 8 月 13 日起，GitHub 在对 Git 操作进行身份验证时不再接受帐户密码。您需要添加PAT（个人访问令牌），您可以按照以下方法在您的系统上添加 PAT。
 
