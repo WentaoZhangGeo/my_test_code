@@ -45,7 +45,7 @@ gedit ~/.ssh/id_rsa.pub
 - 右上角 登陆后点击settings->Developer settings(最后一行)->Personal access tokens, 根据需要选择和填写，密码只显示一次，请保存好
 - 避免同一个仓库每次提交代码都要输入token，把token直接添加远程仓库链接中
 ```bash
-git remote set-url origin https://<your_token>@github.com/<USERNAME>/REPO
+git remote set-url origin https://<your_token>@github.com/<USERNAME>/<REPO>
 ```
 <your_token>：换成你自己得到的token
 
