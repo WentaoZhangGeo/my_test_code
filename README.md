@@ -9,7 +9,7 @@ Using github in Pycharm
 1. 安装git
 `sudo apt install git`
 2. 配置git
-   1. 本地计算机配置用户名和邮箱
++ 本地计算机配置用户名和邮箱
 ```bash
 # 显示当前的Git配置
 git config --list
@@ -73,4 +73,8 @@ git commit -m
 # 提交到远程仓库
 git push
 
+# 简单例子
+git add .
+git commit -m 'New template script by zsh'
+git push
 ```
