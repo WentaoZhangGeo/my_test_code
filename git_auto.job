@@ -35,7 +35,7 @@ case $option in
    3) git add .  && git commit -m ' New template script by zsh' && git push ;;
    *) echo 'Unknown option. Try again,please!'  '你没有输入 1 到 4 之间的数字' ;;
 esac
-
+echo 'Press <Enter> for continue'
 read 
 
 
