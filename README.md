@@ -21,7 +21,7 @@ git config --global user.email "z******.com@gmail.com"
 # 查看配置
 git config --list
 ```
-   2. 配置SSH秘钥
++ 配置SSH秘钥
 ```bash
 ssh-keygen -t rsa -C "zhangwentaoucas@gmail.com"
 # 提示的地方直接按Enter
@@ -31,7 +31,7 @@ cat ~/.ssh/id_rsa.pub
 # 或者
 gedit ~/.ssh/id_rsa.pub
 ```
-本地计算机配置SSH
++ 本地计算机配置SSH
 - 登录github官网，网址：https://github.com/
 - 右上角 登陆后点击settings->SSH and GPS keys->New SSH key
 - 将id_rsa.pub文件中的内容全部复制到key中，输入title，点击Add SSH key 即可。
@@ -40,11 +40,12 @@ gedit ~/.ssh/id_rsa.pub
 - SSH用法 `git clone git@github.com:wzhang1994/Log.git`
 -  或者 `git clone https://github.com/wzhang1994/Log`
 
-   3. 配置个人访问令牌
++ 配置个人访问令牌
 - 登录github官网，网址：https://github.com/
 - 右上角 登陆后点击settings->Developer settings(最后一行)->Personal access tokens, 根据需要选择和填写，密码只显示一次，请保存好
 - 避免同一个仓库每次提交代码都要输入token，把token直接添加远程仓库链接中
 ```bash
+cd $Repository_dir$ # 进入仓库的目录
 git remote set-url origin https://<your_token>@github.com/<USERNAME>/<REPO>
 # <your_token>：换成你自己得到的token
 # <USERNAME>：是你自己github的用户名
