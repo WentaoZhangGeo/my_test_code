@@ -39,9 +39,6 @@ gedit ~/.ssh/id_rsa.pub
 - 最后检查下本地是否与github连接成功 `ssh -T git@github.com` 选择yes即可
 - SSH用法 `git clone git@github.com:wzhang1994/Log.git`
 
-zhangwentaoucas@gmail.com
-Personal access tokens:
-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
 
 
 **注意**: 从 2021 年 8 月 13 日起，GitHub 在对 Git 操作进行身份验证时不再接受帐户密码。您需要添加PAT（个人访问令牌），您可以按照以下方法在您的系统上添加 PAT。
