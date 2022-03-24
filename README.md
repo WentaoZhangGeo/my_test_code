@@ -1,5 +1,4 @@
 # my_test_code
-============
 Using github in Pycharm
 -------
 1. Set git & github in Pycharm
@@ -7,7 +6,8 @@ Using github in Pycharm
 3. Clone the repository in Pycharm
 
 ## ubuntu下配置git
-1. 安装git, `sudo apt install git`
+1. 安装git
+`sudo apt install git`
 2. 配置git
  * 本地计算机配置用户名和邮箱
 ```bash
@@ -64,6 +64,6 @@ git add .
 # 备注新文件的信息
 git commit -m 
 # 提交到远程仓库
-git pull
+git push
 
 ```

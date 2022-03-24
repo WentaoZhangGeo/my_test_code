@@ -19,7 +19,7 @@ do
 echo '################################################'
 echo "Please chose your option:"
 echo "1- git pull	下载远程代码并合并"
-echo "2- git status	查看仓库当前的状态，显示有变更的文件 "
+echo "2- git status	查看仓库当前的状态，检查是否有变更的文件 "
 echo "3- git push	上传远程代码并合并"
 
 echo "0- Quit"
@@ -31,8 +31,8 @@ echo 'Your option is ' $option
 case $option in
    0) echo 'Thanks a lot!' && exit ;;
    1) git pull  ;;
-   2) git status && '文件相同即可不管，不同需要上传远程代码' ;;
-   3) git status && '文件相同即可不管，不同需要上传远程代码' ;;
+   2) git status && echo '文件相同即可不管，不同需要上传远程代码(git push)' ;;
+   3) git add .  && git commit -m 'New template script by zsh' && git push ;;
    *) echo 'Unknown option. Try again,please!'  '你没有输入 1 到 4 之间的数字' ;;
 esac
 
