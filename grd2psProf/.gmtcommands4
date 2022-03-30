@@ -1,0 +1,14 @@
+# GMT common arguments shelf
+-Ba50f25:distance [km] :/a100f50: :SW
+-JM8
+-JX18/13.5
+-R0/18/0/13.5
+-X2
+-x-14.280000000000001
+-Y19.5
+-y-3.5
+-jX18/13.5
+EOF
+00002/3
+EOF
+EOF

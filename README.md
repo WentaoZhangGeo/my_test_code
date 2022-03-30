@@ -1,9 +1,6 @@
 # my_test_code
-Using github in Pycharm
--------
-1. Set git & github in Pycharm
-2. Create a new repository in github website
-3. Clone the repository in Pycharm
+
+grd2psProf: Project data onto lines from grd files.
 
 ## ubuntu下配置git
 1. 安装git

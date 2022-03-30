@@ -1,0 +1,390 @@
+#!/bin/zsh
+
+###### job modificat del DATA_grd2ps.job.  Three profiles  ############################
+
+
+##############  fa un mapa i dos talls de qualsevol fitxer grd ##############
+##############  制作地图和任何grd文件的两片  ##############
+Input_Par_file=Input_DATA_grd2ps.dat
+DIR_file=$HOME/GMTdata/ #home/mtorne/PROJECTS/CARBALLO/Ivone/GRIDS
+DIR_file=$PWD/grd/
+cpt=/home/ictja/GMTdata/TOZER_ETAL_2019_SRTM15+_SUPPLEMENTS_GMT/SRTM15+V2.0/SRTM15+V2.cpt #colourT.cpt
+xlen=18
+size=18/3
+
+## read inputs from file $Input_Par_file
+if [ -f $Input_Par_file ]							
+then
+   awk '{if(NR==1){print $1} }' $Input_Par_file | read ftopo
+   awk '{if(NR==2){print $1,$2,$3,$4} }' $Input_Par_file | read lonmin lonmax latmin latmax 
+   awk '{if(NR==3){print $1,$2,$3,$4} }' $Input_Par_file | read  PxA_ll PyA_ll PxB_ll PyB_ll
+   awk '{if(NR==4){print $1,$2,$3,$4} }' $Input_Par_file | read  PxC_ll PyC_ll PxD_ll PyD_ll
+   awk '{if(NR==5){print $1} }' $Input_Par_file | read DIR_file
+   echo $DIR_file
+   ls -alg $DIR_file/*.grd
+else
+   ls -alg $DIR_file/*.grd
+   	
+   lonmin=-8
+   lonmax=0
+   latmin=40
+   latmax=45
+
+   PxA_ll=-5.35
+   PyA_ll=41.2	
+
+   PxB_ll=-3.09
+   PyB_ll=42.58	
+
+   PxC_ll=-1.64
+   PyC_ll=44.64
+
+   PxD_ll=-1.64
+   PyD_ll=44.64
+##########################
+   lonmin=8
+   lonmax=24
+   latmin=38
+   latmax=45
+
+   PxA_ll=9.85
+   PyA_ll=40.04	
+
+   PxB_ll=15.00
+   PyB_ll=40.27	
+
+   PxC_ll=19.39
+   PyC_ll=43.55
+
+   PxD_ll=21.74
+   PyD_ll=43.48
+
+
+##########################
+   #PxE_ll=-5.5
+   #PyE_ll=37.8
+   #PxF_ll=-4.75
+   #PyF_ll=39.2
+
+fi
+
+region=$lonmin/$lonmax/$latmin/$latmax
+
+echo "Enter grd File name? "
+read I_file_grd
+
+file_out=$I_file_grd
+
+proj_width=25			# Width projection on the profile
+sampling=5			# on the profile
+Dkm=5		#25
+#Ddegree="1"	#"0.00833333"	#"0.05"	#"0.5"		### minimum 0.5m
+
+echo "   "
+echo Topography $ftopo
+echo Region $regioTot_ll
+echo Sampling cada $sampling km
+echo Banda dins la que projectem $proj_width km
+
+#######################################################
+echo "  "
+lon0=$((($PxC_ll+$PxD_ll)*0.5))	 ## Punt mig del perfil		$((($lonmin+$lonmax)*0.5))	## Punt Mig de la regio 	#lon0=-5.66	Estrecho de Gibraltar
+lat0=$((($PyC_ll+$PyD_ll)*0.5))	 ## Punt mig del perfil		$((($latmin+$latmax)*0.5))	## Punt Mig de la regio 	#lat0=36.0
+latmig=$((($latmin+$latmax)*0.5))
+echo Origen centrat al perfil CD - Segon tram del perfil
+#latmig=$lat0
+echo "(Origen x,y) " $lon0 "E , " $lat0 "N   and medium latitud " $latmig "N"
+echo
+type_xy=2				# 1-regular grid   2-real distance (origen on the center)
+
+
+input_file_grd=$I_file_grd
+echo $input_file_grd
+cp $input_file_grd file_grd.tmp
+grdinfo file_grd.tmp
+echo " zmin ?"
+read zmin
+echo " zmax ?"
+read zmax
+echo " Dz ?"
+read Dz
+Anot=$(($Dz*2))
+
+makecpt -Chaxby -T$zmin/$zmax/$Dz -Z -V > colourT.cpt
+
+fileps=$file_out"_ll.ps"
+xscale="M8"	#0.35	#0.55
+Bx_tics="a2f1"
+By_tics="a2f1"
+Bx_tics_Cross="a0.5f0.25"
+text_units="[degrees]"
+PxA=$PxA_ll
+PyA=$PyA_ll
+PxB=$PxB_ll
+PyB=$PyB_ll
+PxC=$PxB_ll
+PyC=$PyB_ll
+PxD=$PxC_ll
+PyD=$PyC_ll
+PxE=$PxC_ll
+PyE=$PyC_ll
+PxF=$PxD_ll
+PyF=$PyD_ll
+#
+#
+psbasemap -P -J$xscale -R$region -B$Bx_tics/$By_tics/WSen -X2 -Y19.5 -K -V  > $fileps
+#grdview file_grd.tmp -J -R -CcolourT -K -O -V >> $fileps
+grdview file_grd.tmp -R -J$xscale -CcolourT.cpt -Qi -O -K -V >> $fileps
+grdcontour file_grd.tmp -C$Dz -R$region -J$xscale -O -K -V -A$anot -W0.5,grey >> $fileps
+pscoast -R$region -JM8 -Df -W0.5,blue -A150 -O -K -V >> $fileps
+psxy -R -J$xscale -W1,red -m -N -O -K -V <<END>> $fileps
+$PxA $PyA 
+$PxB $PyB
+>
+$PxC $PyC 
+$PxD $PyD
+>
+$PxE $PyE 
+$PxF $PyF
+END
+
+pstext -R -J$xscale -N -m -O -K -V <<END>> $fileps
+$PxA $PyA     A
+$PxB $PyB     B-C
+$PxD $PyD     D-E
+$PxF $PyF     F
+END
+
+xc1=$zmin
+xc2=$zmax
+Dzt=$(($Dz*2))
+Bticy="a"$Dzt"g1000"
+
+
+####  barres de dispersio					####  PROFILE 1 (A-B) ####
+echo "======================"
+echo "======================"
+echo "======================"
+echo "Starting Profile 1 A-B"
+echo "======================"
+
+grd2xyz file_grd.tmp -V > file_xyz.tmp
+awk '{print $1,$2,$NF}' file_xyz.tmp | project -Fpzxyrs -C$PxA/$PyA -E$PxB/$PyB -Lw -W-$proj_width/$proj_width -Q  | sort -g > file_projectat.tmp
+
+### passo a km el fitxer projectat
+echo $lon0 $lat0 $latmig $type_xy > filePosition_xytoll.tmp
+awk '{print $5,$6,$2,$1}' file_projectat.tmp > file_ll.tmp
+./lltoxy_reals.job	## input: file_ll.tmp,[filePosition_xytoll.tmp]   output: file_xy.tmp
+awk '{print $1/1e3,$2/1e3,$3,$4 }' file_xy.tmp > file_xy_km.tmp
+awk '{if(NR==1){print $1,$2}}' file_xy_km.tmp | read xP0 yP0
+awk '{print sqrt(($1-xP0)*($1-xP0)+($2-yP0)*($2-yP0)),$3,$4}' xP0=$xP0 yP0=$yP0 file_xy_km.tmp > file_proj_IN.tmp
+banda=$proj_width
+sampling_window_length=$sampling
+./projbanda <<END
+file_proj_IN.tmp
+file_proj_OUT.tmp
+$sampling
+$sampling_window_length
+END
+
+wc file_proj_IN.tmp | read nrow a b c
+awk '{if(NR==1){print $1} }' file_proj_IN.tmp | read Dist0
+awk '{if(NR==nrow){print $1} }' nrow=$nrow file_proj_IN.tmp | read Dist1
+echo '  ----------------------------------------------------'
+echo    Profile AB: $Dist0  -  $Dist1 km   $xc1 $xc2
+echo '  ----------------------------------------------------'
+#R_cross_1=-R$Distance0/$Distance/$xc1/$xc2
+echo " origin ?"
+read Dist0AB
+echo " end ?"
+read Dist1AB
+######
+
+cp file_proj_IN.tmp tmpAB.IN
+cp file_proj_OUT.tmp PAB.dat
+rm file_pro*tmp
+
+####  barres de dispersio					####  PROFILE 2 (C-D) ####
+echo "======================"
+echo "======================"
+echo "======================"
+echo "Starting Profile 2 C-D"
+echo "======================"
+
+grd2xyz file_grd.tmp -V > file_xyz.tmp
+awk '{print $1,$2,$NF}' file_xyz.tmp | project -Fpzxyrs -C$PxC/$PyC -E$PxD/$PyD -Lw -W-$proj_width/$proj_width -Q  | sort -g > file_projectat.tmp
+
+### passo a km el fitxer projectat
+echo $lon0 $lat0 $latmig $type_xy > filePosition_xytoll.tmp
+awk '{print $5,$6,$2,$1}' file_projectat.tmp > file_ll.tmp
+./lltoxy_reals.job	## input: file_ll.tmp,[filePosition_xytoll.tmp]   output: file_xy.tmp
+awk '{print $1/1e3,$2/1e3,$3,$4 }' file_xy.tmp > file_xy_km.tmp
+awk '{if(NR==1){print $1,$2}}' file_xy_km.tmp | read xP0 yP0
+awk '{print sqrt(($1-xP0)*($1-xP0)+($2-yP0)*($2-yP0)),$3,$4}' xP0=$xP0 yP0=$yP0 file_xy_km.tmp > file_proj_IN.tmp
+banda=$proj_width
+sampling_window_length=$sampling
+./projbanda <<END
+file_proj_IN.tmp
+file_proj_OUT.tmp
+$sampling
+$sampling_window_length
+END
+
+wc file_proj_IN.tmp | read nrow a b c
+awk '{if(NR==1){print $1} }' file_proj_IN.tmp | read Dist0
+awk '{if(NR==nrow){print $1} }' nrow=$nrow file_proj_IN.tmp | read Dist1
+echo '  ----------------------------------------------------'
+echo    Profile AB: $Dist0  -  $Dist1 km   $xc1 $xc2
+echo '  ----------------------------------------------------'
+#R_cross_1=-R$Distance0/$Distance/$xc1/$xc2
+echo " origin ?"
+read Dist0CD
+echo " end ?"
+read Dist1CD
+
+cp file_proj_IN.tmp tmpCD.IN
+cp file_proj_OUT.tmp PCD.dat
+rm file_pro*tmp
+
+######
+
+####  barres de dispersio					####  PROFILE 3 (E-F) ####
+echo "======================"
+echo "======================"
+echo "======================"
+echo "Starting Profile 3 E-E"
+echo "======================"
+
+grd2xyz file_grd.tmp -V > file_xyz.tmp
+awk '{print $1,$2,$NF}' file_xyz.tmp | project -Fpzxyrs -C$PxE/$PyE -E$PxF/$PyF -Lw -W-$proj_width/$proj_width -Q  | sort -g > file_projectat.tmp
+
+### passo a km el fitxer projectat
+echo $lon0 $lat0 $latmig $type_xy > filePosition_xytoll.tmp
+awk '{print $5,$6,$2,$1}' file_projectat.tmp > file_ll.tmp
+./lltoxy_reals.job	## input: file_ll.tmp,[filePosition_xytoll.tmp]   output: file_xy.tmp
+awk '{print $1/1e3,$2/1e3,$3,$4 }' file_xy.tmp > file_xy_km.tmp
+awk '{if(NR==1){print $1,$2}}' file_xy_km.tmp | read xP0 yP0
+awk '{print sqrt(($1-xP0)*($1-xP0)+($2-yP0)*($2-yP0)),$3,$4}' xP0=$xP0 yP0=$yP0 file_xy_km.tmp > file_proj_IN.tmp
+banda=$proj_width
+sampling_window_length=$sampling
+./projbanda <<END
+file_proj_IN.tmp
+file_proj_OUT.tmp
+$sampling
+$sampling_window_length
+END
+
+wc file_proj_IN.tmp | read nrow a b c
+awk '{if(NR==1){print $1} }' file_proj_IN.tmp | read Dist0
+awk '{if(NR==nrow){print $1} }' nrow=$nrow file_proj_IN.tmp | read Dist1
+echo '  ----------------------------------------------------'
+echo    Profile AB: $Dist0  -  $Dist1 km   $xc1 $xc2
+echo '  ----------------------------------------------------'
+#R_cross_1=-R$Distance0/$Distance/$xc1/$xc2
+echo " origin ?"
+read Dist0EF
+echo " end ?"
+read Dist1EF
+
+
+cp file_proj_IN.tmp tmpEF.IN
+cp file_proj_OUT.tmp PEF.dat
+rm *tmp
+ll
+echo
+echo
+echo 'Vols conectar els perfils? 1=YES'
+echo
+echo
+read con
+#
+if [ $con -eq 1 ]
+then
+wc PAB.dat | read nrowAB a b c
+echo $nrowAB $a $b $c 
+wc PCD.dat | read nrowCD a b c
+echo $nrowCD $a $b $c
+one=1
+end1=$((($nrowAB-$one)*$sampling))
+end2=$((($nrowCD-$one)*$sampling))
+end3=$(($end1+$end2))
+echo $end1 $end2 $end3
+
+awk '{if($1!="#"){print $0 } }' PAB.dat > PTOT.dat
+awk '{if(NR>1){print $1+end1, $2, $3 } }' end1=$end1 PCD.dat >> PTOT.dat
+awk '{if(NR>1){print $1+end3, $2, $3 } }' end3=$end3 PEF.dat >> PTOT.dat
+
+echo "======================="
+echo "======================="
+echo "======================="
+echo "== Plotting profiles =="
+echo "======================="
+
+wc PTOT.dat | read nrow a b c
+awk '{if(NR==1){print $1} }' PTOT.dat | read Dist0
+awk '{if(NR==nrow){print $1} }' nrow=$nrow PTOT.dat | read Dist1
+echo '  ----------------------------------------------------'
+echo    Profile AB: $Dist0  -  $Dist1 km   $xc1 $xc2
+echo '  ----------------------------------------------------'
+
+echo " origin ?"
+read Distance0
+echo " end ?"
+read Distance1
+echo $Distance0 $Distance1
+
+atic=a$Anot
+ftic=f$Dz
+
+#
+#   PROFILE AB escalant-ho a la distancia total
+#
+tmp=$(($Dist1AB*$xlen))
+echo $tmp
+Dist1=$(($tmp*($Distance1**-1)))
+echo $Dist1
+psbasemap -R$Distance0/$Dist1AB/$xc1/$xc2 -Y-4 -JX$Dist1/3 -Ba50f25/$atic$ftic:" ":SW -K -O >> $fileps
+psxy tmpAB.IN -J -R -Sp -O -K >> $fileps			## tots els punts projectats
+psxy PAB.dat -J -R -W1,red -Ss.1 -Ey/1/0/0/200 -K -O >> $fileps
+#
+#   PROFILE CD escalant-ho a la distancia total
+#
+tmp=$(($Dist1CD*$xlen))
+echo $tmp
+Dist2=$(($tmp*($Distance1**-1)))
+echo $Dist2
+psbasemap -R$Distance0/$Dist1CD/$xc1/$xc2 -Y-3.5 -X$Dist1 -JX$Dist2/3 -Ba50f25/$atic$ftic:" ":SW -K -O >> $fileps
+psxy tmpCD.IN -J -R -Sp -O -K >> $fileps			## tots els punts projectats
+psxy PCD.dat -J -R -W1,red -Ss.1 -Ey/1/0/0/200 -K -O >> $fileps
+#
+#   PROFILE EF escalant-ho a la distancia total
+#
+tmp=$(($Dist1EF*$xlen))
+echo $tmp
+Dist3=$(($tmp*($Distance1**-1)))
+echo $Dist3
+psbasemap -R$Distance0/$Dist1EF/$xc1/$xc2 -Y-3.5 -X$Dist2 -JX$Dist3/3 -Ba50f25/$atic$ftic:" ":SW -K -O >> $fileps
+psxy tmpEF.IN -J -R -Sp -O -K >> $fileps			## tots els punts projectats
+psxy PEF.dat -J -R -W1,red -Ss.1 -Ey/1/0/0/200 -K -O >> $fileps
+#
+#   PROFILE TOTAL (sense punts projectats)
+#
+origin=$(($Dist2+$Dist3+3))
+psbasemap -R$Distance0/$Distance1/$xc1/$xc2 -Y-3.5 -JX$size -X-$origin -Ba50f25:"distance [km] ":/$atic$ftic:" ":SW -K -O >> $fileps
+psxy PTOT.dat -J -R -W1,red -Ss.1 -Ey/1/0/0/200 -K -O >> $fileps
+######
+X1=$(($Dist1-0.15))
+X2=$(($X1+$Dist2))
+Y2=13.5
+psxy -R0/$xlen/0/$Y2 -JX$xlen/$Y2 -W0.75,black,dashed -N -O -K -V <<END>> $fileps
+$X1 0 
+$X1 $Y2
+>
+$X2 0 
+$X2 $Y2
+END
+
+
+fi
+
+evince $fileps &
