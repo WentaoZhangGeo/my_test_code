@@ -1,0 +1,169 @@
+#!/bin/zsh
+##############################  代码说明
+# 目标：截取剖面附近 $proj_width km 的以内的点
+# 两个输入文件：file_topo=@earth_relief_01m；file_HF=HF.xyz 地形图+全部点位
+# 三个输出文件：FILEPS=HeatFlow_Measurments_Q；file_out=HeatFlow_data_profile-ABC.dat；profile.ps
+# 注意事项：
+# 1、D_AB=796.9863007 修改剖面后依靠distanceAB.tmp0最大值手动调整AB的长度
+# 2、B和C点可以重合以实现单一剖面功能
+# 3、HeatFlow_data_profile-ABC.dat格式：距离A的投影距离、距离剖面的垂直距离、Z值
+##############################	代码说明 end
+
+
+### input
+#file_topo=~/MAIN/DATA/elevation/ETOPO1-NOAA-NGDC/ETOPO1_Bed_g.g98
+#file_topo=/home/ictja/GMTdata/Med_topo.grd
+file_topo=@earth_relief_01m
+file_HF=ALL.zwt 			# file_HF文件格式  经度、纬度、Z值
+
+### output
+FILEPS=ProfileBC
+file_out=ProfileBC.dat
+
+
+##############################  Date processing start
+echo "  ¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡     Date processing start   !!!!!!!!!!!!!!!!!!!"
+
+PxA=13.689
+PyA=44.174
+PxB=14.446
+PyB=45.084
+PxC=14.446
+PyC=45.084
+
+
+awk '{if($1!="#"){print $1,$2,$3}}' $file_HF > file_xyz.tmp
+
+proj_width=25
+
+# AB
+awk '{print $1,$2,$NF}' file_xyz.tmp | project -Fpzxyrs -C$PxA/$PyA -E$PxB/$PyB -Lw -W-$proj_width/$proj_width -Q  | sort -n > file_proj_1.tmp
+awk '{print $3,$4}' file_proj_1.tmp > file_proj_view_xy_1.tmp			### Control dels punts projectats
+awk '{print $5,$6}' file_proj_1.tmp > file_proj_view_rs_1.tmp			###
+
+# BC
+awk '{print $1,$2,$NF}' file_xyz.tmp | project -Fpzxyrs -C$PxB/$PyB -E$PxC/$PyC -Lw -W-$proj_width/$proj_width -Q  | sort -n > file_proj_2.tmp
+awk '{print $3,$4}' file_proj_2.tmp > file_proj_view_xy_2.tmp			### Control dels punts projectats
+awk '{print $5,$6}' file_proj_2.tmp > file_proj_view_rs_2.tmp			###
+
+# SUM
+cat file_proj_view_xy_1.tmp file_proj_view_xy_2.tmp | sort | uniq > file_proj_view_xy.tmp
+cat file_proj_view_rs_1.tmp file_proj_view_rs_2.tmp | sort | uniq > file_proj_view_rs.tmp
+
+# distance in AB  
+D_AB=796.9863007 #手动调整
+# 注意:两条线段拐点附近可能有重复的点，在线段比较直的情况下可以忽略
+gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q > distanceAB.tmp0
+awk '{print $1+D1,$2,$3}' D1=0 file_proj_1.tmp > file_proj_1AB.tmp
+awk '{print $1+D1,$2,$3}' D1=$D_AB file_proj_2.tmp > file_proj_2AB.tmp
+cat file_proj_1AB.tmp file_proj_2AB.tmp | sort | uniq > file_proj.tmp
+
+# Heatflow processing
+Data_error=0.1
+awk '{print $1,$2,$2*Data_error}' Data_error=$Data_error file_proj.tmp > file_dist_z_1.tmp
+
+echo "  ¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡     file_proj_view_xy.tmp/file_proj_view_rs.tmp/file_proj.tmp    !!!!!!!!!!!!!!!!!!!".
+echo "  ¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡     Date processing end    !!!!!!!!!!!!!!!!!!!".
+##############################  Date processing end
+
+
+
+##############################  GMT6 Fig start
+xmin=5
+xmax=20
+ymin=40
+ymax=48
+region=$xmin/$xmax/$ymin/$ymax
+xscale=1.1d
+
+cpt=cpt.cpt
+gmt makecpt -Cglobe -T-5000/5000/1 > $cpt
+#makecpt -Chot -T0/200/20 > file_cpt.tmp
+HFcpt=HFcpt.cpt
+makecpt -Cpolar -T0/180/1> $HFcpt
+
+### Elevation Map of Study Region 
+grd=d.grd
+gmt grdcut $file_topo -R$region -G$grd
+
+gmt begin $FILEPS ps
+gmt set FONT_TAG 25p FONT_HEADING 20p MAP_HEADING_OFFSET 0p PS_MEDIA A3
+gmt set MAP_FRAME_TYPE plain
+	gmt subplot begin 2x2 -Fs9c/15c -A -M1c/1c -T"My Subplot Heading"
+	gmt subplot set 0 
+gmt grdimage $grd -C$cpt -R$region -JM? -Baf -BWSen
+gmt coast -W1/0.1p 
+gmt colorbar -DjBC+w3.5i/0.15i+o0/-1.5c+m+h -C$cpt -By+lkm -Bxa2000f500
+
+### profile AB in map
+cat>point.tmp << EOF
+$PxA	$PyA
+$PxB	$PyB
+$PxC	$PyC
+EOF
+psxy point.tmp -W1.5p,brown
+
+	gmt subplot set 1
+gmt grdimage $grd -C$cpt -R$region -JM? -Baf -BWSen
+gmt coast -W1/0.1p 
+#psxy %HFdat% -R -C%cptr% -Sc0.35c -Wblack -J -K -O >>%ps%
+psxy $file_HF -Sc5p -Wblack -C$HFcpt
+psxy point.tmp -W1.5p,brown
+gmt colorbar -DjBC+w3.5i/0.15i+o0/-1.5c+m+h -C$HFcpt -By+lmW/m@+2 -Bxa50f25
+
+	gmt subplot set 2
+gmt grdimage $grd -C$cpt -R$region -JM? -Baf -BWSen
+gmt coast -W1/0.1p 
+psxy point.tmp -W1.5p,brown
+psxy file_proj_view_xy.tmp -Sc5p -Wblack
+
+
+	gmt subplot set 3
+gmt grdimage $grd -C$cpt -R$region -JM? -Baf -BWSen
+gmt coast -W1/0.1p 
+psxy point.tmp -W1.5p,brown
+psxy file_proj_view_rs.tmp -Ss5p -Wblack
+
+	gmt subplot end
+gmt end
+
+
+
+##############################  GMT6 Fig profile start
+gmt begin profileBC ps
+gmt set FONT_TAG 25p FONT_HEADING 20p MAP_HEADING_OFFSET 0p PS_MEDIA A4
+gmt set MAP_FRAME_TYPE plain
+	gmt subplot begin 1x1 -Fs20c/8c -A -M0c/0c -T"My Subplot Heading"
+	gmt subplot set 0 
+gmt basemap -R0/1000/0/180 -JX20c/8c -Bxa100f50+l"Distance/km" -Bya50f25+l"Heat Flow (mW/m@+2@+)" -BWSen+t" "
+psxy file_dist_z_1.tmp -Sc.12 -W1/0/0/0 -G240/0/0 -Ey
+
+
+
+
+
+  gmt subplot end
+gmt end show
+
+
+
+
+cat file_dist_z_1.tmp > $file_out
+rm *.cpt *.grd *.tmp
+
+#evince $FILEPS &
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

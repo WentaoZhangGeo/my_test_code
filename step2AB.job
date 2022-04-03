@@ -1,0 +1,141 @@
+#!/bin/zsh
+##############################  代码说明
+# 目标：截取剖面附近 $proj_width km 的以内的点
+# 两个输入文件：file_topo=@earth_relief_01m；file_HF=HF.xyz 地形图+全部点位
+# 三个输出文件：FILEPS=HeatFlow_Measurments_Q；file_out=HeatFlow_data_profile-ABC.dat；profile.ps
+# 注意事项：
+# 1. D_AB=796.9863007 修改剖面后依靠distanceAB.tmp0最大值手动调整AB的长度
+# 2. B和C点可以重合以实现单一剖面功能
+# 3. HeatFlow_data_profile-ABC.dat格式：距离A的投影距离、距离剖面的垂直距离、Z值
+# 4. You have to have zsh and GMT6.3.0 installed on your computer.
+##############################	代码说明 end
+
+logfile="log_clean.log"
+proj_width=25
+HF_all=ALL.zwt
+Data_error=0.1
+file_out=South_ProHF.dat
+
+
+PxA=9.689
+PyA=42.311
+PxB=13.689
+PyB=44.174
+
+PxA=9.85
+PyA=40.04
+PxB=15.00
+PyB=40.27
+PxC=19.39
+PyC=43.55
+PxD=21.74
+PyD=43.48
+PxE=22.87
+PyE=44.03
+
+echo "宽度: " "$proj_width"
+
+# step1  数据的整合
+step1(){
+    HF_dir=~/ownCloud/Data/Heat_flow
+    awk -F, '$14!=NaN && NR>1 {print $1,$2,$14}' $HF_dir/Geothopica/heat_flow_values.csv > 1.tmp
+    awk -F';' 'NR>1 {print $6,$5,$2}' $HF_dir/IHFC/IHFC_2021_GHFDB.csv > 2.tmp
+    sed 's/?/-/' 1.tmp 2.tmp | cat > $HF_all
+    rm *.tmp
+}
+
+
+
+step2_AB(){
+    # do sth
+    echo '> ' "A($1 $2) B($3 $4) $5" >> $file_out
+    echo "*********************************"
+    echo "参数总数有 $# 个!"
+    echo "作为一个字符串输出所有参数 $* !"
+    
+    local PxA=$1
+    local PyA=$2
+    local PxB=$3
+    local PyB=$4
+    local Distance=$5
+
+    
+    # x 和 y 是数据在原坐标系下的坐标
+    # z 是输入数据中的其余所有列
+    # p 和 q 是数据点 (x,y) 在测线坐标系下的坐标
+    # r 和 s 是数据点 (x,y) 在测线上的投影点在原坐标系下的坐标
+    gmt project $HF_all -Fxyzpqrs -C$PxA/$PyA -E$PxB/$PyB -Lw -W-$proj_width/$proj_width -Q  | sort -n > file_proj.tmp 
+    awk '{print $1,$2,$3}' file_proj.tmp > file_proj_view_xy.tmp			### Control dels punts projectats
+    awk '{print $6,$7}' file_proj.tmp > file_proj_view_rs.tmp			###
+
+    gmt project -C$PxA/$PyA -E$PxB/$PyB -G100 -Q > distanceAB.tmp
+    awk 'END{print $3}' distanceAB.tmp | read Dis_pro
+
+    MaxDis=$(($Distance + $Dis_pro)) 
+    echo 'Dis_pro:' "$Dis_pro"
+    echo 'MaxDis:' "$MaxDis"
+    
+    awk '{print $4 + D,$5,$5*Data_error}' Data_error=$Data_error D=$Distance file_proj.tmp >> $file_out
+
+    
+gmt begin map_$MaxDis
+    gmt grdimage @earth_relief_01m -JM15c -R5/25/35/45 -Baf -BWSen
+    gmt makecpt -Cpolar -T0/180/1
+    gmt plot $HF_all -Sc0.2c -Wblack -C
+    gmt plot file_proj.tmp -Ss0.2c -Gblack
+    gmt plot distanceAB.tmp -W1.5p,brown
+    # gmt text labels.txt -F+f12p
+    gmt text -F+f10p,3,white -N  << EOF
+$PxA $PyA   A ($PxA $PyA)
+$PxB $PyB   B ($PxB $PyB)
+EOF
+gmt end
+
+    return $MaxDis
+    
+
+}
+
+step3_Plot(){
+
+    topoin=~/ownCloud/PhD_Fig/SouthProfile/bar/South_Pro/topo_20_South_Pro/PTOT.dat
+MaxX=1300
+gmt begin map_all
+gmt set PS_MEDIA A4
+gmt subplot begin 2x1 -F17c/10c -A -M0.2c/0.2c
+
+gmt subplot set 0
+    gmt basemap -R0/$MaxX/-40/40 -Bxafg -Byafg+l"Heat Flow (mW/m@+2@+)" -BWsen
+    gmt plot $file_out -Sc.12 -W1/0/0/0 -G240/0/0 -Ey
+gmt subplot set 1
+	echo "   -----  Elevation"
+	Regio=0/$MaxX/-4000/2000	##  Elevation
+	gmt basemap -R$Regio -Bxafg+l"Distance (km)" -Byafg+l"Elevation (m)" -BWneS
+	gmt plot $topoin -Ey/0.1,gray -Sc0.02c -G255/0/0
+gmt subplot end
+gmt end show
+}
+
+main(){
+
+
+    echo 'Running time:' `date +%F_%T`
+    echo '> ' 'Running time:' `date +%F_%T` > $file_out
+    step1
+    Distance=0
+    step2_AB $PxA $PyA $PxB $PyB $Distance
+    Distance=$?
+    step2_AB $PxB $PyB $PxC $PyC $Distance
+    Distance=$?
+    step2_AB $PxC $PyC $PxD $PyD $Distance
+    Distance=$?
+    step2_AB $PxD $PyD $PxE $PyE $Distance
+
+    step3_Plot
+
+
+    rm *.tmp
+}
+
+# invoke main function
+main|tee ${logfile}
