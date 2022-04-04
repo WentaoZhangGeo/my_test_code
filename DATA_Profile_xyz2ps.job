@@ -75,7 +75,7 @@ step2_AB(){
     echo 'Dis_pro:' "$Dis_pro"
     echo 'MaxDis:' "$MaxDis"
     
-    awk '{print $4 + D,$5,$5*Data_error}' Data_error=$Data_error D=$Distance file_proj.tmp >> $file_out
+    awk '{print $4 + D,$3,$3*Data_error}' Data_error=$Data_error D=$Distance file_proj.tmp >> $file_out
 
     
 gmt begin map_$MaxDis
@@ -105,7 +105,7 @@ gmt set PS_MEDIA A4
 gmt subplot begin 2x1 -F17c/10c -A -M0.2c/0.2c
 
 gmt subplot set 0
-    gmt basemap -R0/$MaxX/-40/40 -Bxafg -Byafg+l"Heat Flow (mW/m@+2@+)" -BWsen
+    gmt basemap -R0/$MaxX/0/200 -Bxafg -Byafg+l"Heat Flow (mW/m@+2@+)" -BWsen
     gmt plot $file_out -Sc.12 -W1/0/0/0 -G240/0/0 -Ey
 gmt subplot set 1
 	echo "   -----  Elevation"
@@ -124,6 +124,7 @@ main(){
     step1
     Distance=0
     step2_AB $PxA $PyA $PxB $PyB $Distance
+    
     Distance=$?
     step2_AB $PxB $PyB $PxC $PyC $Distance
     Distance=$?
