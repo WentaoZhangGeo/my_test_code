@@ -1,15 +1,15 @@
 #!/bin/zsh
 ##############################  代码说明
 # 目标：截取剖面附近 $proj_width km 的以内的点
-# 两个输入文件：file_topo=@earth_relief_01m；file_HF=HF.xyz 地形图+全部点位
-# 三个输出文件：FILEPS=HeatFlow_Measurments_Q；file_out=HeatFlow_data_profile-ABC.dat；profile.ps
+# 输入文件：file_topo=@earth_relief_01m；file_HF=HF.xyz 地形图+全部点位
+# 输出文件：FILEPS=HeatFlow_Measurments_Q；file_out=HeatFlow_data_profile-ABC.dat；profile.ps
 # 注意事项：
 # 1. D_AB=796.9863007 修改剖面后依靠distanceAB.tmp0最大值手动调整AB的长度
 # 2. B和C点可以重合以实现单一剖面功能
 # 3. HeatFlow_data_profile-ABC.dat格式：距离A的投影距离、距离剖面的垂直距离、Z值
 # 4. You have to have zsh and GMT6.3.0 installed on your computer.
 ##############################	代码说明 end
-
+cd $(cd $(dirname "$0") && pwd)
 logfile="log_clean.log"
 proj_width=25
 HF_all=ALL.zwt
@@ -40,6 +40,7 @@ step1(){
     HF_dir=~/ownCloud/Data/Heat_flow
     awk -F, '$14!=NaN && NR>1 {print $1,$2,$14}' $HF_dir/Geothopica/heat_flow_values.csv > 1.tmp
     awk -F';' 'NR>1 {print $6,$5,$2}' $HF_dir/IHFC/IHFC_2021_GHFDB.csv > 2.tmp
+    # replace the ?
     sed 's/?/-/' 1.tmp 2.tmp | cat > $HF_all
     rm *.tmp
 }
