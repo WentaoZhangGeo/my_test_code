@@ -13,15 +13,14 @@
 cd $(cd $(dirname "$0") && pwd)
 logfile="log_clean.log"
 
-TopoIn=@earth_relief_04m
+TopoIn=@earth_relief_01m
 
 # 注意 Depth on the $7, because \n
 File_in=~/ownCloud/Data/Tomography/Belinić_et_al_2021EPSL/1-s2.0-S0012821X20306300-mmc1.csv
 
 TopoRegion=7/23/39/48
 
-
-
+step0(){
 PxA=9.85
 PyA=40.04
 PxB=15.00
@@ -32,16 +31,45 @@ PxD=21.74
 PyD=43.48
 PxE=22.87
 PyE=44.03
+echo $PxA $PyA > Profile_coordinate.tmp
+echo $PxB $PyB >> Profile_coordinate.tmp
+echo $PxC $PyC >> Profile_coordinate.tmp
+echo $PxD $PyD >> Profile_coordinate.tmp
+echo $PxE $PyE >> Profile_coordinate.tmp
 
-PxA=9.70
-PyA=42.32
-PxB=21
-PyB=47.34
 
 PxA=9.85
 PyA=40.04
 PxB=22.87
 PyB=44.03
+}
+
+step0_Nor(){
+PxA=9.695707058255012
+PyA=42.31676840994488
+PxB=13.702926064359609
+PyB=44.19370999714001
+PxC=14.164473684210527
+PyC=44.97911832946636
+PxD=17.236842105263158
+PyD=46.04176334106729
+PxE=21
+PyE=47.343332819944656
+
+echo $PxA $PyA > Profile_coordinate.tmp
+echo $PxB $PyB >> Profile_coordinate.tmp
+echo $PxC $PyC >> Profile_coordinate.tmp
+echo $PxD $PyD >> Profile_coordinate.tmp
+echo $PxE $PyE >> Profile_coordinate.tmp
+PxA=9.70
+PyA=42.32
+PxB=21
+PyB=47.34
+
+
+
+}
+
 Width=5
 
 # Data preprocessing
@@ -125,24 +153,7 @@ $PxA $PyA   A ($PxA $PyA)
 $PxB $PyB   B ($PxB $PyB)
 EOF
 
-
-PxA=9.85
-PyA=40.04
-PxB=15.00
-PyB=40.27
-PxC=19.39
-PyC=43.55
-PxD=21.74
-PyD=43.48
-PxE=22.87
-PyE=44.03
-    gmt plot -W3p,gray << EOF
-$PxA $PyA  
-$PxB $PyB  
-$PxC $PyC
-$PxD $PyD 
-$PxE $PyE 
-EOF
+    gmt plot Profile_coordinate.tmp -W2p,black 
 
 gmt end
 
@@ -151,6 +162,7 @@ gmt end
 
 
 main(){
+    step0
     step1
     step2
 }
