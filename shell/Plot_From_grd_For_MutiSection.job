@@ -7,20 +7,25 @@
 cd $(cd $(dirname "$0") && pwd)
 logfile="log_clean.log"     # 日志文件
 
-input_file_grd=/home/ictja/Github/My_lib/shell/grd2psProf/grd/topo_20_South_Pro.grd
+input_file_grd=./grd2psProf/grd/topo_20_South_Pro.grd
+input_file_grd=./grd2psProf/grd/GGECO_2190-10.grd
 file_out=South_Pro.dat      # 输出数据文件/Outpot dat file
 
 # Input coordinate of the profile
 > coordinate.tmp << EOF
-9.99, 39.94, A
-14.55, 39.93, B
-16.11, 41.36, C
+9.99, 39.94, A, -W1p,red
+14.55, 39.93, B, -W1p,green
+16.11, 41.36, C, -W1p,black
+17.24, 41.00, D, -W1p,cyan
+19.35, 43.50, E, -W1p,yellow
+21.74, 43.49, F, -W1p,blue
+22.89, 43.98, G, -W1p,50/0/0
 EOF
 
 main(){
     step1
     step3_Plot
-    rm *.tmp
+    # rm *.tmp
 }
 
 step1(){
@@ -28,20 +33,20 @@ step1(){
 # 终点的距离
 Dis_pro=0
 wc coordinate.tmp | read nrow a b c
-touch file_xy_Distance.tmp file_Info.tmp
+echo > $file_out
 
 for i ({1..$(($nrow-1))}) {
-    awk -F, 'NR==i {print "> -W2p,red",$1,$2}' i=$i D=$Dis_pro coordinate.tmp >> file_xy_Distance.tmp
+    awk -F, 'NR==i {print "> ",$0}' i=$i D=$Dis_pro coordinate.tmp >> $file_out
     awk -F, 'NR==i {print $1,$2}' i=$i D=$Dis_pro coordinate.tmp >> file_Info.tmp
     
     awk -F, 'NR==i {print $1,$2}' i=$i coordinate.tmp | read PxA PyA
     awk -F, 'NR==i+1 {print $1,$2}' i=$i coordinate.tmp | read PxB PyB
 
-    # gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q >> file_xy_Distance.tmp
-    gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q | awk '{print $1,$2,$3 + D}' D=$Dis_pro >> file_xy_Distance.tmp
-    awk 'END{print $3}' file_xy_Distance.tmp | read Dis_pro # 终点的距离    
+    # gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q >> $file_out
+    gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q | awk '{print $1,$2,$3 + D}' D=$Dis_pro | gmt grdtrack -G$input_file_grd  >> $file_out
+    awk 'END{print $3}' $file_out | read Dis_pro # 终点的距离    
 }
-gmt grdtrack file_xy_Distance.tmp -G$input_file_grd > $file_out
+
 
 }
 
