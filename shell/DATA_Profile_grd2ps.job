@@ -1,92 +1,47 @@
 #!/bin/zsh
 ##############################  代码说明
-# 目标：截取剖面附近 $proj_width km 的以内的点
-# 输入文件：file_topo=@earth_relief_01m；grd 文件
-# 输出文件：FILEPS=HeatFlow_Measurments_Q；file_out=HeatFlow_data_profile-ABC.dat；profile.ps
+# 目标：截取剖面附近 $proj_width km 的以内的点(原计划)
+#       实现提取剖面数据(目前实现)
 # 注意事项：
-# 1. D_AB=796.9863007 修改剖面后依靠distanceAB.tmp0最大值手动调整AB的长度
-# 2. B和C点可以重合以实现单一剖面功能
-# 3. HeatFlow_data_profile-ABC.dat格式：距离A的投影距离、距离剖面的垂直距离、Z值
-# 4. You have to have zsh and GMT6.3.0 installed on your computer.
+# 1. You have to have zsh and GMT6.3.0 installed on your computer.
 ##############################	代码说明 end
 cd $(cd $(dirname "$0") && pwd)
-logfile="log_clean.log"
-proj_width=25
-DIR_file=$PWD/grd2psProf/grd/
-file_out=South_Pro.dat
-PxA=9.85
-PyA=40.04
-PxB=15.00
-PyB=40.27
-PxC=19.39
-PyC=43.55
-PxD=21.74
-PyD=43.48
-PxE=22.87
-PyE=44.03
 
+logfile="log_clean.log"     # 日志文件
+proj_width=25               # 
+DIR_file=$PWD/grd2psProf/grd/   # *.grd 文件夹/Folder
+file_out=South_Pro.dat      # 输出数据文件/Outpot dat file
 
-# step1  grd文件的处理
-step1(){
-    ls -alg $DIR_file/*.grd
-    echo "Enter grd File name? "
-    read input_file_grd
-    #input_file_grd=/home/ictja/Github/My_lib/grd2psProf/grd//topo_20_South_Pro.grd
-    cp $input_file_grd file_grd.tmp
-    gmt grdinfo file_grd.tmp
-}
+# The coordinate of the profile
+################# 2021-03-27 
+# PxA=9.85
+# PyA=40.04
+# PxB=15.00
+# PyB=40.27
+# PxC=19.39
+# PyC=43.55
+# PxD=21.74
+# PyD=43.48
+# PxE=22.87
+# PyE=44.03
+ 
 
+# PxA=9.99
+# PyA=39.94
+# PxB=14.55
+# PyB=39.93
+# PxC=16.11
+# PyC=41.36
 
-# step2  Porfile数据的处理
-step2(){
-    # do sth
-    echo '> ' "A($1 $2) B($3 $4) $5" >> $file_out
-    echo "*********************************"
-    echo "参数总数有 $# 个!"
-    echo "作为一个字符串输出所有参数 $* !"
-    
-    local PxA=$1
-    local PyA=$2
-    local PxB=$3
-    local PyB=$4
-    local Distance=$5
-    gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q | gmt grdtrack -Gfile_grd.tmp > file_proj.tmp
-
-    awk 'END{print $3}' file_proj.tmp | read Dis_pro
-
-    MaxDis=$(($Distance + $Dis_pro)) 
-    echo 'Dis_pro:' "$Dis_pro"
-    echo 'MaxDis:' "$MaxDis"
-    
-    awk '{print $3 + D,$4}' Data_error=$Data_error D=$Distance file_proj.tmp >> $file_out
-
-gmt begin map_$MaxDis
-    gmt grdimage file_grd.tmp -JM15c -R5/25/35/45 -Baf -BWSen
-    gmt makecpt -Cpolar -T0/180/1
-    gmt plot file_proj.tmp -W1.5p,brown
-    gmt text -F+f10p,3,white -N  << EOF
-$PxA $PyA   A ($PxA $PyA)
-$PxB $PyB   B ($PxB $PyB)
-EOF
-
-    region=0/$Dis_pro/0/10 
-    gmt plot file_proj.tmp -i2,3 -R$region -JX15c/6c -Wthick,darkred -Ggray -L+y-40000 -Y-9c -BWSne -Bxaf+l"Distance along the @;red;line profile@;; (km)" -Byaf+l"Elevation (m)"
-gmt end
-
-    return $MaxDis
-    
-}
-
-step3_Plot(){
-gmt begin map
-    gmt grdimage file_grd.tmp -JM15c -R5/25/35/45 -Baf -BWSen
-    gmt makecpt -Cpolar -T0/180/1
-
-    region=0/$MaxDis/0/10  
-    gmt plot $file_out -R$region -JX15c/6c -Wthick,darkred -Ggray -L+y-40000 -Y-9c -BWSne -Bxaf+l"Distance along the @;red;line profile@;; (km)" -Byaf+l"Elevation (m)"
-gmt end
-
-}
+################# 2021-03-27 
+PxA=17.24
+PyA=41.00
+PxB=19.35
+PyB=43.50
+PxC=21.74
+PyC=43.49
+PxD=22.89
+PyD=43.98
 
 main(){
 
@@ -102,12 +57,84 @@ main(){
     step2 $PxB $PyB $PxC $PyC $Distance
     Distance=$?
     step2 $PxC $PyC $PxD $PyD $Distance
-    Distance=$?
-    step2 $PxD $PyD $PxE $PyE $Distance
+    # Distance=$?
+    # step2 $PxD $PyD $PxE $PyE $Distance
     step3_Plot
 exit
     rm *.tmp
 }
+
+# step1  grd文件的处理/The choose of *.grd 
+step1(){
+    ls -alg $DIR_file/*.grd
+    echo "Enter grd File name? "
+    read input_file_grd
+    #input_file_grd=/home/ictja/Github/My_lib/grd2psProf/grd//topo_20_South_Pro.grd
+    cp $input_file_grd file_grd.tmp
+    gmt grdinfo file_grd.tmp
+ 
+}
+
+
+# step2  Porfile数据的处理/Date processing for each section
+step2(){
+    # do sth
+    echo '> ' "A($1 $2) B($3 $4) $5" >> $file_out
+    echo "*********************************"
+    echo "参数总数有 $# 个, 分别是$* !!"
+    # echo "作为一个字符串输出所有参数 $* !"
+    
+    local PxA=$1
+    local PyA=$2
+    local PxB=$3
+    local PyB=$4
+    local Distance=$5  # 该剖面增加的距离
+    gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q | gmt grdtrack -Gfile_grd.tmp > file_proj.tmp
+
+    awk 'END{print $3}' file_proj.tmp | read Dis_pro # 该剖面实际长度
+
+    MaxDis=$(($Distance + $Dis_pro)) 
+    echo 'Dis_pro:' "$Dis_pro"
+    echo 'MaxDis:' "$MaxDis"
+    
+    awk '{print $1,$2,$3 + D,$4}' Data_error=$Data_error D=$Distance file_proj.tmp >> $file_out
+
+gmt begin map_$MaxDis
+    gmt grdimage file_grd.tmp -JM15c -R5/25/35/45 -Baf -BWSen -U"'$input_file_grd'"
+    gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -C -By+l" " -Bxaf
+    gmt coast -W0.25p
+    # gmt makecpt -Cpolar -T0/180/1
+    gmt plot file_proj.tmp -W1.5p,brown
+    gmt text -F+f10p,3,white -N  << EOF
+$PxA $PyA   A ($PxA $PyA)
+$PxB $PyB   B ($PxB $PyB)
+EOF
+
+    gmt info -i2,3 -I1 file_proj.tmp | read R
+    # region=0/$Dis_pro/0/10 
+    gmt plot file_proj.tmp -i2,3 $R -JX15c/6c -Wthick,darkred -Ggray -L+y-40000 -Y-9c -BWSne -Bxaf+l"Distance along the @;red;line profile@;; (km)" -Byaf+l"Elevation (m)"
+gmt end
+
+    return $MaxDis
+    
+}
+
+step3_Plot(){
+gmt begin map
+    gmt grdimage file_grd.tmp -JM15c -R5/25/35/45 -Baf -BWSen -U"'$input_file_grd'"
+    gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -C -By+l" " -Bxaf
+    gmt coast -W0.25p
+    gmt plot $file_out -W1.5p,brown
+
+    # region=0/$MaxDis/0/10  
+    gmt info -i2,3 -I1 $file_out | read R
+    gmt plot -i2,3 $file_out $R -JX15c/6c -Wthick,darkred -Ggray -L+y-40000 -Y-9c -BWSne -Bxaf+l"Distance along the @;red;line profile@;; (km)" -Byaf+l"Elevation (m)"
+    
+gmt end
+
+}
+
+
 
 # invoke main function
 main|tee ${logfile}

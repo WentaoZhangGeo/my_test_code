@@ -124,14 +124,14 @@ Width=$WidthNumber$WidthUnit
     gmt makecpt -Cseismic -T4.3/4.8 
     gmt grdimage filexDepth_Vx_grd.tmp -C
     gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -C -By+l"Vs (km/s)" -Bxaf
-    #gmt plot filexDepth_Vx.tmp -Ss0.05c -Gblack
+    # gmt plot filexDepth_Vx.tmp -Ss0.05c -Gblack
     
     echo '————————Tomography Vp'   
     gmt basemap $R -Jx$Jx/-$Jx -BWSne -Bxaf+l"Distance along the @;red;profile@;;  (km)" -Byafg+l"Depth (km)" -Y3i
     gmt makecpt -Cseismic -T7.5/9.0
     gmt grdimage filexDepth_Vp_grd.tmp -C
     gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -C -By+l"Vp (km/s)" -Bxaf
-    #gmt plot filexDepth_Vx.tmp -Ss0.05c -Gblack
+    # gmt plot filexDepth_Vx.tmp -Ss0.05c -Gblack
 
     echo '————————Elevation'
     gmt info -i2,3 -I1 Topo_profile.tmp  | read R
