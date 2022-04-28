@@ -12,7 +12,7 @@ input_file_grd=./grd2psProf/grd/GGECO_2190-10.grd
 file_out=South_Pro.dat      # 输出数据文件/Outpot dat file
 
 # Input coordinate of the profile
-> coordinate.tmp << EOF
+> Info_profile.tmp << EOF
 9.99, 39.94, A, -W1p,red
 14.55, 39.93, B, -W1p,green
 16.11, 41.36, C, -W1p,black
@@ -22,25 +22,28 @@ file_out=South_Pro.dat      # 输出数据文件/Outpot dat file
 22.89, 43.98, G, -W1p,50/0/0
 EOF
 
+
+# main
 main(){
+    gmt grdinfo $input_file_grd
     step1
     step3_Plot
-    # rm *.tmp
+    rm *.tmp
 }
+
 
 step1(){
 
 # 终点的距离
 Dis_pro=0
-wc coordinate.tmp | read nrow a b c
+wc Info_profile.tmp | read nrow a b c
 echo > $file_out
 
 for i ({1..$(($nrow-1))}) {
-    awk -F, 'NR==i {print "> ",$0}' i=$i D=$Dis_pro coordinate.tmp >> $file_out
-    awk -F, 'NR==i {print $1,$2}' i=$i D=$Dis_pro coordinate.tmp >> file_Info.tmp
+    awk -F, 'NR==i {print "> ",$0}' i=$i Info_profile.tmp >> $file_out
     
-    awk -F, 'NR==i {print $1,$2}' i=$i coordinate.tmp | read PxA PyA
-    awk -F, 'NR==i+1 {print $1,$2}' i=$i coordinate.tmp | read PxB PyB
+    awk -F, 'NR==i {print $1,$2}' i=$i Info_profile.tmp | read PxA PyA
+    awk -F, 'NR==i+1 {print $1,$2}' i=$i Info_profile.tmp | read PxB PyB
 
     # gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q >> $file_out
     gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q | awk '{print $1,$2,$3 + D}' D=$Dis_pro | gmt grdtrack -G$input_file_grd  >> $file_out
@@ -58,7 +61,7 @@ gmt begin map_out
     gmt grdimage $input_file_grd -JM15c -R5/25/35/45 -Baf -BWSen -U"'$input_file_grd'"
     gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -C -By+l" " -Bxaf
     gmt coast -W0.25p
-    awk -F, '{print $1,$2,$3,"("$1,$2")" }' i=$i coordinate.tmp | gmt text -F+f10p,3,white -N 
+    awk -F, '{print $1,$2,$3,"("$1,$2")" }' i=$i Info_profile.tmp | gmt text -F+f10p,3,white -N 
     gmt plot $file_out -W1.5p,brown
 
     # region=0/$MaxDis/0/10  

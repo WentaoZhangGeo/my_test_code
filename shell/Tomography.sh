@@ -1,111 +1,118 @@
-#!/bin/zsh
+#!/bin/zsh 
 
 #########################################################
 # Function  :Tomography             
 # Platform  :GMT6.3.0                   
-# Version   :1.0                                         
-# Date      :2021-04-05                                  
+# Version   :2.0                                         
+# Date      :2021-04-28                                  
 # Author    :wzhang                               
 # Contact   :zhangwentaoucas@gmail.com                                
 #########################################################
 
 # Get the source directory of this script
-cd $(cd $(dirname "$0") && pwd)
+SCRIPT_dir=$(cd $(dirname "$0") && pwd)
+cd $SCRIPT_dir
 logfile="log_clean.log"
+TopoGrd=@earth_relief_01m
 
-TopoIn=@earth_relief_01m
+# ******************Tomography Date****************************
+# # Tomography date for Belinić et al., 2021 EPSL
+# # $1: Depth(km); $2: Vp(km/s); $3: Vs(km/s)
+# # $4: Density(kh/m3); $5: lat(º); $6: lon(º)
+# # $7: Depth(km), 注意 Depth on the $7, because \n
+# File_in=~/ownCloud/Data/Tomography/Belinić_et_al_2021EPSL/1-s2.0-S0012821X20306300-mmc1.csv
+# # awk -F, '{if(NR>1){print $6,$5,$1,$3}}' $File_in | uniq > file_xyzv.tmp
+# awk -F, '{if(NR>1){print $6,$5,$1,$3}}' $File_in > file_xyzv.tmp
+# gmt makecpt -Cseismic -T4.3/4.8 > color.cpt
+# label='Vs(km/s)'
+# awk -F, '{if(NR>1){print $6,$5,$1,$2}}' $File_in > file_xyzv.tmp
+# gmt makecpt -Cseismic -T7.5/9.0 > color.cpt
+# label='Vp(km/s)'
+# 
+# TopoRegion=7/23/39/48
+# Width=5 # The max width alone the profile
 
-# 注意 Depth on the $7, because \n
-File_in=~/ownCloud/Data/Tomography/Belinić_et_al_2021EPSL/1-s2.0-S0012821X20306300-mmc1.csv
-
-TopoRegion=7/23/39/48
-
-step0(){
-PxA=9.85
-PyA=40.04
-PxB=15.00
-PyB=40.27
-PxC=19.39
-PyC=43.55
-PxD=21.74
-PyD=43.48
-PxE=22.87
-PyE=44.03
-echo $PxA $PyA > Profile_coordinate.tmp
-echo $PxB $PyB >> Profile_coordinate.tmp
-echo $PxC $PyC >> Profile_coordinate.tmp
-echo $PxD $PyD >> Profile_coordinate.tmp
-echo $PxE $PyE >> Profile_coordinate.tmp
+File_in=model_villasenor_2015.xyzv
+awk -F, '{if(NR>1){print $2,$1,$3,$4}}' $File_in > file_xyzv.tmp
+gmt makecpt -Cseismic -T-1/1 > color.cpt
+label='Vp(km/s)'
+TopoRegion=-10/10/35/50
+Width=5 # The max width alone the profile
 
 
-PxA=9.85
-PyA=40.04
-PxB=22.87
-PyB=44.03
+# ******************Profile Date****************************
+# Sorthern proflie, zhang et al., 2022
+> Info_profile.tmp << EOF
+9.85, 40.04, A, -W1p,red
+15.00, 40.27, B, -W1p,blue
+19.39, 43.55, C, -W1p,black
+21.74, 43.48, D, -W1p,cyan
+22.87, 44.03, E, -W1p,red
+EOF
+
+# Pyrenees
+> Info_profile.tmp << EOF
+-5.35, 41.2,A, -W1p,red
+-3.09,42.58,B, -W1p,blue
+-1.64,44.64,C, -W1p,black
+EOF
+
+
+
+file_xyzv=file_xyzv.tmp 
+file_VSlice=file_VerticalSlice.tmp
+file_grd=file_VerticalSlice_grd.tmp
+file_topo=file_ProfileTopo.tmp
+
+
+main(){
+    
+    xyzv2VerticalSlice
+    VerticalSlice2Fig
+    rm *.tmp *.cpt
 }
 
-step0_Nor(){
-PxA=9.695707058255012
-PyA=42.31676840994488
-PxB=13.702926064359609
-PyB=44.19370999714001
-PxC=14.164473684210527
-PyC=44.97911832946636
-PxD=17.236842105263158
-PyD=46.04176334106729
-PxE=21
-PyE=47.343332819944656
+# xyzv2VerticalSlice $Input$ $Output$
+# xyzv2VerticalSlice file_xyzv.tmp file_VerticalSlice.tmp
+# Outpoutfile: 
+# $1: Dinstance(km); $2: Depth(km); $3: V(km/s); $4: lat(º); $5: lon(º)
 
-echo $PxA $PyA > Profile_coordinate.tmp
-echo $PxB $PyB >> Profile_coordinate.tmp
-echo $PxC $PyC >> Profile_coordinate.tmp
-echo $PxD $PyD >> Profile_coordinate.tmp
-echo $PxE $PyE >> Profile_coordinate.tmp
-PxA=9.70
-PyA=42.32
-PxB=21
-PyB=47.34
+xyzv2VerticalSlice(){
 
+echo "The grd file of Topography:" $TopoGrd
+Dis_pro=0
+wc Info_profile.tmp | read nrow a b c
+echo > $file_VSlice
+echo > $file_topo
+for i ({2..$nrow}) {
+    awk -F, 'NR==i-1 {print "> ",$0}' i=$i Info_profile.tmp >> $file_VSlice | cat
+    
+    awk -F, 'NR==i-1 {print $1,$2}' i=$i Info_profile.tmp | read PxA PyA
+    awk -F, 'NR==i {print $1,$2}' i=$i Info_profile.tmp | read PxB PyB
+
+    # gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q >> $file_VSlice
+    gmt project $file_xyzv -C$PxA/$PyA -E$PxB/$PyB -Fxyzpqrs -W-$Width/$Width -Lw -Q | awk '{print $5+D,$3,$4,$1, $2}' D=$Dis_pro >> $file_VSlice
+
+    # *********Topo****************
+    awk -F, 'NR==i-1 {print "> ",$0}' i=$i Info_profile.tmp >> $file_topo
+    gmt grdcut $TopoGrd -R$TopoRegion -GTopo_grd.tmp
+    gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q | awk '{print $1,$2,$3 + D}' D=$Dis_pro | gmt grdtrack -GTopo_grd.tmp  >> $file_topo
+    
+    awk 'END{print $3}' $file_topo | read Dis_pro # 终点的距离 
+}
+
+gmt info  $file_VSlice -C  | read Amin Amax Bmin Bmax
+R=-R$Amin/$Amax/50/300
+echo $R
+gmt surface $file_VSlice $R -I2/2 -G$file_grd
 
 
 }
 
-Width=5
+VerticalSlice2Fig(){
 
-# Data preprocessing
-step1(){
-
-    # Make small Topography grd file 
-    gmt grdcut $TopoIn -R$TopoRegion -GTopo_grd.tmp
-
-    # Make Topography file along the profile
-    gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q | gmt grdtrack -GTopo_grd.tmp > Topo_profile.tmp
-
-    # uniq: filters out the repeated lines in a file
-    awk -F, '{if(NR>1){print $6,$5}}' $File_in | uniq > filexy.tmp
-
-    awk -F, '{if(NR>1){print $6,$5,$1,$3,$2}}' $File_in | gmt project -C$PxA/$PyA -E$PxB/$PyB -Fxyzpqrs -W-$Width/$Width -Lw -Q > filexyD_all.tmp
-
-    # Make Vs grd file
-    awk '{print $6,$3,$4}' filexyD_all.tmp > filexDepth_Vx.tmp
-
-    gmt info  filexDepth_Vx.tmp -C  | read Amin Amax Bmin Bmax
-    R=-R$Amin/$Amax/50/300
-
-    gmt surface  filexDepth_Vx.tmp $R -I2/2 -GfilexDepth_Vx_grd.tmp
-
-
-    # Make Vp grd file
-    awk '{print $6,$3,$5}' filexyD_all.tmp > filexDepth_Vp.tmp
-
-    gmt info  filexDepth_Vp.tmp -C  | read Amin Amax Bmin Bmax
-    R=-R$Amin/$Amax/50/300
-
-    gmt surface  filexDepth_Vp.tmp $R -I2/2 -GfilexDepth_Vp_grd.tmp
-}
-
-# Plot the result by GMT6
-step2(){
+file_in=file_VerticalSlice.tmp 
+MaxDepth=400
 
 gmt begin map_all
 # gmt set PS_MEDIA A4 # 21cm×29.7cm / 8.3 × 11.7 inch 
@@ -115,56 +122,35 @@ WidthNumber=6
 WidthUnit=i
 Width=$WidthNumber$WidthUnit
 
-    echo '————————Tomography Vs'
-    awk 'END {print $3}' Topo_profile.tmp | read Xmax
-    R=-R0/$Xmax/0/400
+    echo '————————Tomography V'
+    awk 'END {print $3}' $file_topo | read Xmax
     Jx=$(($WidthNumber*2.54/$Xmax))
+
+    gmt info -i2 -I1 $file_topo | read R
+    gmt basemap $R$MaxDepth -Jx$Jx/-$Jx -BWSne -Bxaf+l"Distance along the @;red;profile@;; (km)" -Byafg+l"Depth (km)" -U"'$File_in'"
     
-    gmt basemap $R -Jx$Jx/-$Jx -BWSne -Bxaf+l"Distance along the @;red;profile@;; (km)" -Byafg+l"Depth (km)" -U"'$File_in'"
-    gmt makecpt -Cseismic -T4.3/4.8 
-    gmt grdimage filexDepth_Vx_grd.tmp -C
-    gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -C -By+l"Vs (km/s)" -Bxaf
-    # gmt plot filexDepth_Vx.tmp -Ss0.05c -Gblack
-    
-    echo '————————Tomography Vp'   
-    gmt basemap $R -Jx$Jx/-$Jx -BWSne -Bxaf+l"Distance along the @;red;profile@;;  (km)" -Byafg+l"Depth (km)" -Y3i
-    gmt makecpt -Cseismic -T7.5/9.0
-    gmt grdimage filexDepth_Vp_grd.tmp -C
-    gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -C -By+l"Vp (km/s)" -Bxaf
-    # gmt plot filexDepth_Vx.tmp -Ss0.05c -Gblack
+    gmt grdimage $file_grd -Ccolor.cpt
+    gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -Ccolor.cpt -By+l"$label" -Bxaf
 
     echo '————————Elevation'
-    gmt info -i2,3 -I1 Topo_profile.tmp  | read R
-    gmt plot Topo_profile.tmp -i2,3 $R -JX$Width/1i -Wthick,darkred -Ggray -L+y-10000 -BWSne -Bxaf+l"Distance along the @;red;profile@;; (km)" -Byaf+l"Elevation (m)" -Y3i
+    gmt info -i2,3 -I1 $file_topo  | read R
+    gmt plot $file_topo -i2,3 $R -JX$Width/1.5i -Wthick,darkred -Ggray -L+y-10000 -BWSne -Bxaf+l"Distance along the @;red;profile@;; (km)" -Byaf+l"Elevation (m)" -Y3i
 
     echo '————————Topo map'
     gmt makecpt -Cglobe -T-5000/5000/10
-    gmt grdimage $TopoIn -JM$Width -C -R$TopoRegion -Baf -BWSen+t""  -Y2i
+    gmt grdimage $TopoGrd -JM$Width -C -R$TopoRegion -Baf -BWSen+t""  -Y2i
     
-    
+    gmt plot file_xyzv.tmp -Ss0.06c -Gblack
+    gmt plot -i3,4 $file_in -Sc0.1c -Ggreen -W1p,green
+
     # The location of Profile
-    gmt psxy Topo_profile.tmp -W3p,red
-
-    gmt plot filexyD_all.tmp -Sc0.1c -Ggreen
-    gmt plot filexy.tmp -Ss0.06c -Gblack
-
-    gmt text -F+f10p,3,black -N  << EOF
-$PxA $PyA   A ($PxA $PyA)
-$PxB $PyB   B ($PxB $PyB)
-EOF
-
-    gmt plot Profile_coordinate.tmp -W2p,black 
+    # gmt text -N  Info_profile.tmp 
+    awk -F, '{print $1,$2,$3,"("$1,$2")" }' i=$i Info_profile.tmp | gmt text -F+f10p,3,red -N 
+    gmt plot $file_topo -W2p,black 
 
 gmt end
 
 
-}
-
-
-main(){
-    step0
-    step1
-    step2
 }
 
 # invoke main function

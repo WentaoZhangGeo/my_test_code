@@ -1,0 +1,39 @@
+#!/bin/zsh
+
+#####################################################################
+#################	March 2021 @wzhang	#####################
+#####################################################################
+##### 	This script works for upto 6th version of GMT		#####
+#####################################################################
+#####   Plot results from Litmod:				#####
+#####  		1- P-wave velocities				#####
+#####		2- S-wave velocities  				#####
+#####		3- Their anomalies from a reference column	#####
+#####################################################################
+
+grd2xyz_Profile(){
+	Info_profile=$1
+	input_file_grd=$2
+	file_out=$3
+
+	# 终点的距离
+	Dis_pro=0
+	wc $Info_profile | read nrow a b c
+	echo > $file_out
+
+	for i ({1..$(($nrow-1))}) {
+		awk -F, 'NR==i {print "> ",$0}' i=$i $Info_profile >> $file_out
+		
+		awk -F, 'NR==i {print $1,$2}' i=$i $Info_profile | read PxA PyA
+		awk -F, 'NR==i+1 {print $1,$2}' i=$i $Info_profile | read PxB PyB
+
+		# gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q >> $file_out
+		gmt project -C$PxA/$PyA -E$PxB/$PyB -G1 -Q | awk '{print $1,$2,$3 + D}' D=$Dis_pro | gmt grdtrack -G$input_file_grd  >> $file_out
+		awk 'END{print $3}' $file_out | read Dis_pro # 终点的距离    
+	}
+
+
+}
+
+
+
