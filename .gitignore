@@ -2,7 +2,8 @@
 *.fig
 *.jpg
 *.tmp
-map_*
+*.cpt
+*.pdf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -16,29 +16,31 @@ logfile="log_clean.log"
 TopoGrd=@earth_relief_01m
 
 # ******************Tomography Date****************************
-# # Tomography date for Belinić et al., 2021 EPSL
-# # $1: Depth(km); $2: Vp(km/s); $3: Vs(km/s)
-# # $4: Density(kh/m3); $5: lat(º); $6: lon(º)
-# # $7: Depth(km), 注意 Depth on the $7, because \n
-# File_in=~/ownCloud/Data/Tomography/Belinić_et_al_2021EPSL/1-s2.0-S0012821X20306300-mmc1.csv
-# # awk -F, '{if(NR>1){print $6,$5,$1,$3}}' $File_in | uniq > file_xyzv.tmp
-# awk -F, '{if(NR>1){print $6,$5,$1,$3}}' $File_in > file_xyzv.tmp
-# gmt makecpt -Cseismic -T4.3/4.8 > color.cpt
-# label='Vs(km/s)'
+# Tomography date for Belinić et al., 2021 EPSL
+# $1: Depth(km); $2: Vp(km/s); $3: Vs(km/s)
+# $4: Density(kh/m3); $5: lat(º); $6: lon(º)
+# $7: Depth(km), 注意 Depth on the $7, because \n
+File_in=~/ownCloud/Data/Tomography/Belinić_et_al_2021EPSL/1-s2.0-S0012821X20306300-mmc1.csv
+# awk -F, '{if(NR>1){print $6,$5,$1,$3}}' $File_in | uniq > file_xyzv.tmp
+awk -F, '{if(NR>1){print $6,$5,$1,$3}}' $File_in > file_xyzv.tmp
+gmt makecpt -Cseismic -T4.3/4.8 > color.cpt
+label='Vs(km/s)'
 # awk -F, '{if(NR>1){print $6,$5,$1,$2}}' $File_in > file_xyzv.tmp
 # gmt makecpt -Cseismic -T7.5/9.0 > color.cpt
 # label='Vp(km/s)'
-# 
-# TopoRegion=7/23/39/48
-# Width=5 # The max width alone the profile
 
-File_in=model_villasenor_2015.xyzv
-awk -F, '{if(NR>1){print $2,$1,$3,$4}}' $File_in > file_xyzv.tmp
-gmt makecpt -Cseismic -T-1/1 > color.cpt
-label='Vp(km/s)'
-TopoRegion=-10/10/35/50
+TopoRegion=7/23/39/48
 Width=5 # The max width alone the profile
 
+# File_in=model_villasenor_2015.xyzv
+# awk -F, '{if(NR>1){print $2,$1,$3,$4}}' $File_in > file_xyzv.tmp
+# # gmt info file_xyzv.tmp -T0.1+c3 | gmt makecpt -Chot > color.cpt
+# gmt makecpt -Cseismic -T-1.0/1.0 > color.cpt
+# label='dVp(%)'
+# TopoRegion=-10/5/36/48
+# Width=10 # The max width alone the profile
+
+# alias Surface='gmt surface $file_VSlice $R -I2/2 -G$file_grd'
 
 # ******************Profile Date****************************
 # Sorthern proflie, zhang et al., 2022
@@ -50,26 +52,27 @@ Width=5 # The max width alone the profile
 22.87, 44.03, E, -W1p,red
 EOF
 
-# Pyrenees
-> Info_profile.tmp << EOF
--5.35, 41.2,A, -W1p,red
--3.09,42.58,B, -W1p,blue
--1.64,44.64,C, -W1p,black
-EOF
+# # Pyrenees
+# > Info_profile.tmp << EOF
+# -5.35, 41.2,A, -W1p,red
+# -3.09,42.58,B, -W1p,blue
+# -1.64,44.64,C, -W1p,black
+# EOF
 
 
-
+# Temporary files for the script
 file_xyzv=file_xyzv.tmp 
 file_VSlice=file_VerticalSlice.tmp
 file_grd=file_VerticalSlice_grd.tmp
 file_topo=file_ProfileTopo.tmp
 
-
+gmt info file_xyzv.tmp 
+# exit
 main(){
     
     xyzv2VerticalSlice
     VerticalSlice2Fig
-    rm *.tmp *.cpt
+    # rm *.tmp *.cpt
 }
 
 # xyzv2VerticalSlice $Input$ $Output$
@@ -103,9 +106,10 @@ for i ({2..$nrow}) {
 
 gmt info  $file_VSlice -C  | read Amin Amax Bmin Bmax
 R=-R$Amin/$Amax/50/300
+# gmt info  $file_VSlice -I1  | read R
 echo $R
 gmt surface $file_VSlice $R -I2/2 -G$file_grd
-
+# Surface
 
 }
 
@@ -132,20 +136,22 @@ Width=$WidthNumber$WidthUnit
     gmt grdimage $file_grd -Ccolor.cpt
     gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -Ccolor.cpt -By+l"$label" -Bxaf
 
+    # gmt plot $file_in -Ss0.06c -Gblack
+
     echo '————————Elevation'
     gmt info -i2,3 -I1 $file_topo  | read R
-    gmt plot $file_topo -i2,3 $R -JX$Width/1.5i -Wthick,darkred -Ggray -L+y-10000 -BWSne -Bxaf+l"Distance along the @;red;profile@;; (km)" -Byaf+l"Elevation (m)" -Y3i
+    gmt plot $file_topo -i2,3 $R -JX$Width/1.0i -Wthick,darkred -Ggray -L+y-10000 -BWSne -Bxaf -Byaf+l"Elevation (m)" -Y$(($WidthNumber*$MaxDepth/$Xmax+0.5))i
 
     echo '————————Topo map'
     gmt makecpt -Cglobe -T-5000/5000/10
-    gmt grdimage $TopoGrd -JM$Width -C -R$TopoRegion -Baf -BWSen+t""  -Y2i
+    gmt grdimage $TopoGrd -JM$Width -C -R$TopoRegion -Baf -BWSen+t""  -Y1.5i
     
     gmt plot file_xyzv.tmp -Ss0.06c -Gblack
     gmt plot -i3,4 $file_in -Sc0.1c -Ggreen -W1p,green
 
     # The location of Profile
     # gmt text -N  Info_profile.tmp 
-    awk -F, '{print $1,$2,$3,"("$1,$2")" }' i=$i Info_profile.tmp | gmt text -F+f10p,3,red -N 
+    awk -F, '{print $1,$2,$3,"("$1,$2")" }' Info_profile.tmp | gmt text -F+f10p,3,red -N 
     gmt plot $file_topo -W2p,black 
 
 gmt end

@@ -1,0 +1,290 @@
+#!/bin/zsh
+#########################################################
+# Function  :
+# Plot of results and the fitting : elevation, Bouguer and Geoid             
+# Platform  :GMT6.3.0                   
+# Version   :1.0                                         
+# Date      :2021-04-28                                  
+# Author    :wzhang                               
+# Contact   :zhangwentaoucas@gmail.com                                
+#########################################################
+cd $(cd $(dirname "$0") && pwd)
+
+psfile=Data_fit_all
+Format=pdf
+
+### Input files
+
+ModelDir=$PWD/New09_All_Tc_2
+ModelDir=~/ownCloud/PhD_Fig/NorProfile_Fig/2021-12-13_V_F02_5/New09_T2/T2_NoSlab
+
+echo $ModelDir
+
+topoin=$ModelDir/0Topo.dat
+topo=$ModelDir/topo_out.dat	# LitMod output file
+bougin=$ModelDir/0BOU.dat
+boug=$ModelDir/bouguer_out.dat
+geoin=$ModelDir/0GEO.dat	## GECO
+geoid=$ModelDir/geoid_out.dat
+flujo=$ModelDir/SHF_out.dat
+flujoin=$ModelDir/0Heatflow.zwt
+
+fileTemp=$ModelDir/tempout.dat
+fileDens=$ModelDir/dens_node2.dat
+fileBodies=$ModelDir/bodies.out
+filePost=$ModelDir/post_processing_output.dat
+#Quakes=Quakes_Engdahl.xz
+
+####    Moho and LAB depth from previous studies (South Iberia-North Africa)
+LAB1=~/ownCloud/Data/LAB/Artemieva_2019_ESR/LAB.dat
+LAB_label1=Artemieva.\\040(2019)
+LAB2=~/ownCloud/Data/LAB/Belinić_et_al_2018EPSL_file/AllProfile.zwt
+LAB_label2=Belinic\\040et\\040al.\\054\\040(2018)
+LAB3=~/ownCloud/Data/LAB/Šumanovac_and_Dudjak_2016JG/LAB_data_adjust
+LAB_label3=Šumanovac\\040and\\040Dudjak.\\040(2016)
+
+wigth=2
+
+### Figure setting
+wc $topoin | read numrow a b c
+awk '{if(NR==1) {print $1} }' $topoin | read Xmin
+Xmin=0
+awk '{if(NR==numrow) {print $1} }' numrow=$numrow $topoin | read Xmax
+width=16.6
+scale1=s$width/2.3		#2.7	## 	Surface heat flow, Gravity, Geoid, Elevation
+scale1_topo=s$width/1.5		##	Elevation for TemDen picture
+
+## Scaled - lithosphere temperature profile. 
+##	For a profile 950 km long  =>	width=16.6 and	xscale=0.0175
+##					width=16   and	xscale=0.01688
+##					width=15.2 and	xscale=0.016
+##	For a profile 1070 km long  =>	width=16.6 and	xscale=0.01552
+
+xscale=0.0175
+xscale=0.01552
+scale2=x$xscale/-$xscale
+Rx=$Xmin/$Xmax	##  Horizontal dimension
+
+SymbData=-G255/0/0
+size=0.07 
+Disp_Data=1/130/130/130
+Disp_Data=default
+Line_Calc=1p,blue	# width and color of Line from calulate
+
+#############################################################################################
+
+cat > file_cpt.cpt <<END
+0	26	102	240	100	26	102	240
+100	25	175	255	200	25	175	255
+200	50	190	255	300	50	190	255
+300	97	225	240	400	97	225	240
+400	106	235	225	500	106	235	225
+500	138	236	174	600	138	236	174
+600	172	245	168	700	172	245	168
+700	223	245	141	800	223	245	141
+800	247	215	104	900	247	215	104
+900	255	189	87	1000	255	189	87
+1000	244	117	75	1100	244	117	75
+1100	238	80	78	1200	238	80	78
+1200	255	124	124	1300	255	124	124
+1300	255	158	158	1400	255	158	158
+1400	255	196	196	1500	255	196	196
+1500	255	215	215	1600	255	215	215
+END
+
+
+cat > file_cpt.cpt <<END
+0	26	102	240	100	26	102	240
+100	25	175	255	200	25	175	255
+200	50	190	255	300	50	190	255
+300	97	225	240	400	97	225	240
+400	106	235	225	500	106	235	225
+500	138	236	174	600	138	236	174
+600	172	245	168	700	172	245	168
+700	223	245	141	800	223	245	141
+800	247	215	104	900	247	215	104
+900	255	189	87	1000	255	189	87
+1000	244	117	75	1100	244	117	75
+1100	238	80	78	1200	238	80	78
+1200	255	124	124	1300	255	124	124
+1300	255	158	158	1400	255	158	158
+1400	255	196	196	1500	255	196	196
+1500	255	215	215	1600	255	215	215
+END
+
+cat > file_cpt_Den.cpt <<END
+3200	255	215	215	3225	255	215	215
+3225	255	196	196	3250	255	196	196
+3250	255	158	158	3275	255	158	158
+3275	255	124	124	3300	255	124	124
+3300	238	80	78	3325	238	80	78
+3325	244	117	75	3350	244	117	75
+3350	255	189	87	3375	255	189	87
+3375	247	215	104	3400	247	215	104
+3400	223	245	141	3425	223	245	141
+3425	172	245	168	3450	172	245	168
+3450	138	236	174	3475	138	236	174
+3475	106	235	225	3500	106	235	225
+3500	97	225	240	3525	97	225	240
+3525	50	190	255	3550	50	190	255
+3550	25	175	255	3575	25	175	255
+3575	26	102	255	3600	26	102	255
+3600	0	51	255	3625	26	51	255
+
+B	150/150/150
+F	blue
+N	blue
+END
+
+
+TD=_TemDen
+psfileTD=$psfile$TD
+Regio=$Rx/-5/400		##  Temperature + Bodies geometry
+Dx=5
+
+awk '{if($1==">") {print ">"} else {print $1,-$2 }}' $fileBodies > file_bodies.tmp	## bodies
+awk '{if(NR>2) {print $1, -$2, $3}}' $fileTemp | gmt nearneighbor -R$Regio -I$Dx -Gfile_grd.tmp -S10 -N4
+awk '{if(NR>2) {print $1, -$2, $3}}' $filePost | gmt nearneighbor -R$Regio -I$Dx -GfilePost_grd.tmp -S10 -N4
+
+awk '{if(NR>2) {print $1, -$2, $3}}' $fileDens | gmt nearneighbor -R$Regio -I$Dx -Gfile_grdDen.tmp -S10 -N4
+echo $psfileTD $Format
+
+
+## 开始
+gmt begin $psfile $Format A
+gmt set MAP_FRAME_TYPE plain
+gmt set FONT 12p,3
+gmt set MAP_GRID_PEN faint
+gmt set MAP_TICK_PEN 1p
+gmt set FORMAT_GEO_MAP=dddF
+gmt set MAP_GRID_PEN faint
+gmt set PS_MEDIA A4
+gmt set MAP_ORIGIN_X 0.8i
+gmt set MAP_ORIGIN_Y 1.1i
+
+# gmt set PS_MEDIA A3
+echo $psfile $Format
+  gmt subplot begin 8x1 -F$scale1 -A -M0.0c/0.1c
+    gmt subplot set 0 -X-1c
+	Regio=$Rx/0/200	##  Surface heat flow region
+	echo "   -----  Surface heat flow"
+	gmt basemap -R$Regio -Bxafg -Bya+l"SHF (mW/m@+2@+)" -BWNes
+	gmt plot $flujoin -Ey/$Disp_Data -Sc$size $SymbData
+	gmt plot $flujo -W$Line_Calc
+	gmt text -F+f10p,3 -N << EOF
+20   	270	Tyrrhenian Sea
+290   	270	Northern Apennines
+550   	270	Dinarides
+900	270 	Pannonian Basin
+EOF
+
+#ModelDir2=$PWD/New09_All_Tc_2
+#geoid2=$ModelDir2/geoid_out.dat
+
+    gmt subplot set 1
+	Regio=$Rx/-10/10		##  Geoid
+	echo "   -----  Geoid"
+	awk '{if (NR>1) {print $1, $3 }}' $geoid > file_geoid1D.tmp
+	gmt basemap -R$Regio -Bxafg -Bya+l"Geoid (m)" -BWnes
+	gmt plot $geoin -R$Regio -Ey/$Disp_Data -Sc$size $SymbData
+	gmt plot $geoid -W$Line_Calc
+	#gmt plot $geoid2 -W1p,red
+    	gmt plot -W0.5p,black << EOF
+0 0
+10000 0
+EOF
+
+    gmt subplot set 2
+	Regio=$Rx/-100/100	##  Gravity
+	echo "   -----  Gravity"
+	gmt basemap -R$Regio -Bxafg -Bya+l"Bouguer (mGal)" -BWnes
+	gmt plot $bougin -Ey/$Disp_Data -Sc$size $SymbData
+	gmt plot $boug -W$Line_Calc
+	gmt plot -W0.5p,black << EOF
+0 0
+10000 0
+EOF
+
+    gmt subplot set 3
+	echo "   -----  Elevation"
+	Regio=$Rx/-2000/2000	##  Elevation
+	# gmt basemap -R$Regio -Bxafg+l"Distance (km)" -Bya+l"Elevation (m)" -BWneS 
+	gmt basemap -R$Regio -Bxafg -Bya+l"Elevation (m)" -BWnes
+	gmt plot $topoin -Ey/$Disp_Data -Sc$size $SymbData
+    	gmt plot -W0.5p,black << EOF
+0 0
+10000 0
+EOF
+
+	###   uncoupled and coupled
+	awk '{ print $1, $3 }' $topo > file_uncoupled.tmp
+	#gmt plot Delta_elevation.x -W0.5/0/150/0
+	gmt plot file_uncoupled.tmp -W$Line_Calc -l'Thermal isostasy'
+	gmt plot $topo -W0.8,black,-- -l'Thermal isostasy with mantle anomalies'
+	
+	###  calculated-observed (m)
+	# paste file_uncoupled.tmp $topoin > file_uncoupled_data.tmp
+	# echo " x[km]    Delta elevation(calculated-observed) [m]" > Delta_elevation.x
+	# awk '{ if ($1==$3) {print $1, $2-$4 } }' file_uncoupled_data.tmp >> Delta_elevation.x
+	# gmt plot Delta_elevation.x -W0.8,gray,-- -l'calculated-observed (m)'
+	
+	###   Flexure
+	Te1=$ModelDir/Deflexiotopotao_TeA.dat
+	awk '{print $1,$3}' $Te1 | gmt plot -W0.8,green -l'Te=10 km'
+	Te2=$ModelDir/Deflexiotopotao_TeB.dat
+	awk '{print $1,$3}' $Te2 | gmt plot -W0.8,green,-- -l'Te=20 km'
+	
+	###   Flexure with slab
+	# Te1=$ModelDir/Deflexiotopotao_Te=10km_slab.dat
+	# awk '{print $1,$3}' $Te1 | gmt plot -W0.8,magenta -l'Te=10 km with slab'
+	# Te2=$ModelDir/Deflexiotopotao_Te=20km_slab.dat
+	# awk '{print $1,$3}' $Te2 | gmt plot -W0.8,magenta,-- -l'Te=20 km with slab'
+	
+	gmt legend -DjTR+w3c+o3.0c/-0.15c --FONT_ANNOT_PRIMARY=8p,3
+
+    gmt subplot set 5 -A'e)' -Cy-0.8c
+	echo "   -----  Temperature structure"
+	Regio=$Rx/-5/400		##  Temperature + Bodies geometry 
+	#gmt basemap -R$Regio -Bxaf -Bya+l"SHF (mW/m@+2@+)" -BWNEs
+	gmt basemap -R$Regio -J$scale2 -Bxaf+l" " -Bya+l"Depth (km)" -BWnes
+	gmt grdview file_grd.tmp -J$scale2 -Cfile_cpt.cpt -Qi
+	gmt grdcontour file_grd.tmp -C100 -A200+f8p,black+gwhite -W1p,255/255/255 -J$scale2 
+	#gmt grdcontour file_grd.tmp -C1320 -W1p,0/0/0 -J$scale2 
+	gmt colorbar -Dx17/3.15/6.3/0.2 -Cfile_cpt.cpt -Bxa200f100+l"Temperature (C@.)" -J$scale2
+	gmt plot file_bodies.tmp -W0.2,gray -J$scale2
+	gmt plot $LAB1 -J$scale2  -W$wigth,brown,4_4  -l$LAB_label1
+	gmt plot $LAB2 -J$scale2  -Sa6p -Gred -l$LAB_label2
+	gmt plot $LAB3 -J$scale2  -W$wigth,magenta,3_3:2p -l$LAB_label3
+	gmt legend -DjBR+w4c+o4c/0.2c
+
+
+    gmt subplot set 7 -A'f)' -Cy-1.6c
+    	echo "   -----  Density structure"
+    	gmt basemap -R$Regio -J$scale2 -Bxaf+l"Distance (km)" -Bya+l"Depth (km)" -BWneS
+    	gmt grdview file_grdDen.tmp -J$scale2 -Cfile_cpt_Den.cpt -Qi
+    	gmt plot file_bodies.tmp -W0.2,gray -J$scale2
+    	gmt grdcontour file_grdDen.tmp -C40 -A80+f8p,black+g255/255/255 -W1p,255/255/255 -J$scale2 -L3200/4000
+
+    	# gmt grdcontour file_grd.tmp -C1320 -W1p,0/0/0 -J$scale2
+    	gmt colorbar -Dx17/3.15/6.3/0.2 -Cfile_cpt_Den.cpt -Bxa80f40+l"Density (kg/m@+3@+)" -J$scale2
+    	
+    # 	# echo 50 -150 ML 0 SHOW TEXTS | gmt text -F+f8p,3,white+j+a -N
+	# echo 350 -135 ML 0 Adriatic mantle | gmt text -F+f10p,3,white+j+a -N
+	# # echo 400 -105 ML 0 Fertile | gmt text -F+f10p,3,white+j+a -N
+	# echo 820 -145 ML 0 Pannonian mantle | gmt text -F+f10p,3,white+j+a -N
+	# echo 620 -140 ML 0 Mantle wedge | gmt text -F+f10p,3,white+j+a -N
+	# echo 120 -150 ML 0 Mantle wedge | gmt text -F+f10p,3,white+j+a -N
+	
+	# echo 180 40 ML 0 -200 C@. | gmt text -F+f10p,3,black+j+a -N
+	# echo 630 -30 ML 0 -200 C@. | gmt text -F+f10p,3,black+j+a -N
+	
+	# echo 990 160 ML 0 DMM | gmt text -F+f12p,3,black+j+a -N
+	
+  gmt subplot end
+
+gmt end show
+
+rm *.tmp *.cpt
+# mv $psfile* $ModelDir
+# echo "The psfiles have been move to " $ModelDir
+

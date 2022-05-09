@@ -7,21 +7,54 @@
 cd $(cd $(dirname "$0") && pwd)
 logfile="log_clean.log"     # 日志文件
 
-input_file_grd=./grd2psProf/grd/topo_20_South_Pro.grd
-input_file_grd=./grd2psProf/grd/GGECO_2190-10.grd
-file_out=South_Pro.dat      # 输出数据文件/Outpot dat file
+# grd_name=topo_20_South_Pro.grd
+grd_name=GGECO_2190-10.grd
+Label="Geoid (m)"
+grd_name=bouguer_g.grd
+Label="Bouguer (mGal)"
+# grd_name=FA.grd
+# grd_name=Med_CBA.grd
+# grd_name=Med_FAA.grd
+# grd_name=plot_CBA_20200115060040.grd
+input_file_grd=./grd2psProf/grd/$grd_name
+file_out=OptionB_$grd_name.dat      # 输出数据文件/Outpot dat file
+fig_out=OptionB_$grd_name
+
 
 # Input coordinate of the profile
 > Info_profile.tmp << EOF
 9.99, 39.94, A, -W1p,red
-14.55, 39.93, B, -W1p,green
-16.11, 41.36, C, -W1p,black
-17.24, 41.00, D, -W1p,cyan
+14.55, 39.93, B, -W1p,black
+16.11, 41.36, C, -W1p,white
+17.24, 41.00, D, -W1p,black
 19.35, 43.50, E, -W1p,yellow
-21.74, 43.49, F, -W1p,blue
+21.74, 43.49, F, -W1p,cyan
 22.89, 43.98, G, -W1p,50/0/0
 EOF
 
+# Input coordinate of the profile
+> Info_profile.tmp << EOF
+9.99, 39.94, -W1p,red
+14.55, 39.93, -W1p,black
+16.11, 41.36, -W1p,white
+16.62, 41.22, -W1p,black
+17.94, 42.67, -W1p,white
+18.33, 42.39, -W1p,black
+19.33, 43.50, -W1p,cyan
+21.74, 43.49, -W1p,yellow
+22.88, 43.98, -W1p,50/20/20
+EOF
+
+# > Info_profile.tmp << EOF
+# 9.98, 39.94, -W1p
+# 14.54, 39.94, -W1p
+# 14.95, 40.32, -W1p
+# 16.14, 41.39, -W1p
+# 18.36, 42.39, -W1p
+# 19.33, 43.50, -W1p
+# 21.73, 43.49, -W1p
+# 22.88, 43.98, -W1p
+# EOF
 
 # main
 main(){
@@ -57,7 +90,7 @@ for i ({1..$(($nrow-1))}) {
 
 # step3
 step3_Plot(){
-gmt begin map_out
+gmt begin $fig_out
     gmt grdimage $input_file_grd -JM15c -R5/25/35/45 -Baf -BWSen -U"'$input_file_grd'"
     gmt colorbar -DjMR+w2i/0.2i+o-2c/0c -C -By+l" " -Bxaf
     gmt coast -W0.25p
@@ -66,7 +99,7 @@ gmt begin map_out
 
     # region=0/$MaxDis/0/10  
     gmt info -i2,3 -I1 $file_out | read R
-    gmt plot -i2,3 $file_out $R -JX15c/6c -Wthick,darkred -Ggray -L+y-40000 -Y-9c -BWSne -Bxaf+l"Distance along the @;red;line profile@;; (km)" -Byaf+l"Elevation (m)"
+    gmt plot -i2,3 $file_out $R -JX15c/6c -Wthick,darkred -Ggray -L+y-40000 -Y-9c -BWSne -Bxaf+l"Distance along the @;red;line profile@;; (km)" -Byaf+l$Label
     
 gmt end
 

@@ -1,0 +1,154 @@
+#!/bin/zsh
+# cp ~/ownCloud/PhD_Fig/#Code/0Data_fit_zwt.job $PWD && zsh 0Data_fit_zwt.job
+
+# Plot of results and the fitting : elevation, Bouguer and Geoid
+
+psfile=Data_fit_Tem
+Format=pdf
+
+### Input files
+
+ModelDir=$PWD/New09
+ModelDir=/home/ictja/Music/2021_NorthPor/2021-10-27_07:46:57_V_F02/New09
+#ModelDir=$PWD/oldVersion
+echo $ModelDir
+topoin=$ModelDir/0Topo.dat
+topo=$ModelDir/topo_out.dat	# LitMod output file
+bougin=$ModelDir/0BOU.dat
+boug=$ModelDir/bouguer_out.dat
+geoin=$ModelDir/0GEO.dat	## GECO
+geoid=$ModelDir/geoid_out.dat
+flujo=$ModelDir/SHF_out.dat
+flujoin=$ModelDir/0Heatflow.zwt
+
+fileTemp=$ModelDir/tempout.dat
+fileDens=$ModelDir/dens_node2.dat
+fileBodies=$ModelDir/bodies.out
+filePost=$ModelDir/post_processing_output.dat
+#Quakes=Quakes_Engdahl.xz
+
+####    Moho and LAB depth from previous studies (South Iberia-North Africa)
+LAB1=~/ownCloud/Data/LAB/Artemieva_2019_ESR/LAB.dat
+LAB_label1=Artemieva.\\040(2019)
+LAB2=~/ownCloud/Data/LAB/Belinić_et_al_2018EPSL_file/AllProfile.zwt
+LAB_label2=Belinic\\040et\\040al.\\054\\040(2018)
+LAB3=~/ownCloud/Data/LAB/Šumanovac_and_Dudjak_2016JG/LAB_data_adjust
+LAB_label3=Šumanovac\\040and\\040Dudjak.\\040(2016)
+
+wigth=2
+
+### Figure setting
+wc $topoin | read numrow a b c
+awk '{if(NR==1) {print $1} }' $topoin | read Xmin
+Xmin=0
+awk '{if(NR==numrow) {print $1} }' numrow=$numrow $topoin | read Xmax
+width=16.6
+scale1=s$width/3		#2.7	## 	Surface heat flow, Gravity, Geoid, Elevation
+scale1_topo=s$width/1.5		##	Elevation for TemDen picture
+
+## Scaled - lithosphere temperature profile. 
+##	For a profile 950 km long  =>	width=16.6 and	xscale=0.0175
+##					width=16   and	xscale=0.01688
+##					width=15.2 and	xscale=0.016
+##	For a profile 1070 km long  =>	width=16.6 and	xscale=0.01552
+
+xscale=0.0175
+xscale=0.01552
+scale2=x$xscale/-$(($xscale*1.0))
+
+Rx=$Xmin/$Xmax	##  Horizontal dimension
+
+SymbData=-G255/0/0
+size=0.07 
+Disp_Data=1/130/130/130
+Disp_Data=default
+Line_Calc=1p,blue	# width and color of Line from calulate
+
+#############################################################################################
+
+cat <<END> file_cpt.cpt
+0	26	102	240	100	26	102	240
+100	25	175	255	200	25	175	255
+200	50	190	255	300	50	190	255
+300	97	225	240	400	97	225	240
+400	106	235	225	500	106	235	225
+500	138	236	174	600	138	236	174
+600	172	245	168	700	172	245	168
+700	223	245	141	800	223	245	141
+800	247	215	104	900	247	215	104
+900	255	189	87	1000	255	189	87
+1000	244	117	75	1100	244	117	75
+1100	238	80	78	1200	238	80	78
+1200	255	124	124	1300	255	124	124
+1300	255	158	158	1400	255	158	158
+1400	255	196	196	1500	255	196	196
+1500	255	215	215	1600	255	215	215
+END
+
+cat <<END> file_cpt_Den.cpt
+3200	255	215	215	3225	255	215	215
+3225	255	196	196	3250	255	196	196
+3250	255	158	158	3275	255	158	158
+3275	255	124	124	3300	255	124	124
+3300	238	80	78	3325	238	80	78
+3325	244	117	75	3350	244	117	75
+3350	255	189	87	3375	255	189	87
+3375	247	215	104	3400	247	215	104
+3400	223	245	141	3425	223	245	141
+3425	172	245	168	3450	172	245	168
+3450	138	236	174	3475	138	236	174
+3475	106	235	225	3500	106	235	225
+3500	97	225	240	3525	97	225	240
+3525	50	190	255	3550	50	190	255
+3550	25	175	255	3575	25	175	255
+3575	26	102	255	3600	26	102	255
+3600	0	51	255	3625	26	51	255
+
+B	150/150/150
+F	blue
+N	blue
+END
+
+
+TD=_TemDen
+psfileTD=$psfile$TD
+Regio=$Rx/-5/400		##  Temperature + Bodies geometry
+Dx=5
+
+awk '{if($1==">") {print ">"} else {print $1,-$2 }}' $fileBodies > file_bodies.tmp	## bodies
+awk '{if(NR>2) {print $1, -$2, $3}}' $fileTemp | gmt nearneighbor -R$Regio -I$Dx -Gfile_grd.tmp -S10 -N4
+awk '{if(NR>2) {print $1, -$2, $3}}' $filePost | gmt nearneighbor -R$Regio -I$Dx -GfilePost_grd.tmp -S10 -N4
+
+awk '{if(NR>2) {print $1, -$2, $3}}' $fileDens | gmt nearneighbor -R$Regio -I$Dx -Gfile_grdDen.tmp -S10 -N4
+echo $psfileTD $Format
+
+
+## 开始
+gmt begin $psfile $Format A
+gmt set MAP_FRAME_TYPE plain
+gmt set FONT 14p,3
+gmt set MAP_GRID_PEN faint
+gmt set MAP_TICK_PEN 1p
+gmt set FORMAT_GEO_MAP=dddF
+gmt set MAP_GRID_PEN faint
+
+gmt set PS_MEDIA A3
+echo $psfile $Format
+  gmt subplot begin 8x1 -F$scale1 -M0.2c/0.2c
+
+
+    gmt subplot set 5 -Cy0.8c
+	echo "   -----  Temperature structure"
+	Regio=$Rx/-5/400		##  Temperature + Bodies geometry 
+	#gmt basemap -R$Regio -Bxaf -Bya+l"SHF (mW/m@+2@+)" -BWNEs
+	gmt basemap -R$Regio -J$scale2 -Bxaf+l"Distance (km)" -Bya+l"Depth (km)" -BWneS
+	gmt grdview file_grd.tmp -J$scale2 -Cfile_cpt.cpt -Qi
+	gmt grdcontour file_grd.tmp -C100 -A200+f10p,black+gwhite -W1p,255/255/255 -J$scale2 
+	#gmt grdcontour file_grd.tmp -C1320 -W1p,0/0/0 -J$scale2 
+	gmt colorbar -Dx17.5/3.1/6.2/0.5 -Cfile_cpt.cpt -Bxa200f100+l"Temperature (C@.)" -J$scale2
+	gmt plot file_bodies.tmp -W0.2,gray -J$scale2
+
+	
+  gmt subplot end
+
+gmt end

@@ -1,0 +1,73 @@
+#!/bin/zsh
+
+#####################################################################
+#################	January 2020 by wzhang	#####################
+#####################################################################
+#####   	Plot results from Litmod:			#####
+#####  		1- Crustal Structure				#####
+#####		2- Lithosphere Structure 			#####
+#####################################################################
+
+###################    Setting
+echo $PWD
+filemode=~/ownCloud/LitMod/20201202/2021-03-24_13:19:36_Model_Final_V2.0
+filemode=/home/ictja/Music/2021-09-15_09:56:20_V_DE_0.5_21
+filemode=/home/ictja/ownCloud/PhD_Fig/NorProfile_Fig/2021-12-13_V_F02_5/New09
+filemode=~/ownCloud/PhD_Fig/NorProfile_Fig/2021-12-13_V_F02_5/New09_T2/T2
+fileBodies=$filemode/bodies_GUI.out
+file_topo=~/ownCloud/PhD_Fig/NorProfile_Fig/2021-12-13_V_F02_5/NP					#   	0NorPro.job
+psfile=Crust_Lithosphere
+
+####    Moho and LAB depth from previous studies (South Iberia-North Africa)
+#Mod_Palomeras=~/MAIN/Projectes-Varios/Carballo-3rdProfile/DATA/Previous_Models/Topo_Moho_LAB_Palomeras2017.xdat
+
+wc $file_topo | read numrow a b c
+awk '{if(NR==numrow) {print $1} }' numrow=$numrow $file_topo | read Xmax
+XYdim=0/$Xmax/0/400
+
+#Set profile extension and scales
+left=0			### horizontal inicial point (km)
+right=$Xmax		### horizontal last point (km)
+Dx=5			### horizontal discrititzation (km)
+width=39c		#X16
+xscale=0.0355
+
+Jtopo=x$xscale/0.0009  #Jtopo=X$width/1.4
+Jcrust=x$xscale/$((2.0*$xscale))
+Jgraf=x$xscale/$xscale
+
+###################    ps
+gmt begin $psfile ps,pdf,png
+gmt set MAP_FRAME_TYPE plain
+gmt set FONT 14p,3
+gmt set MAP_GRID_PEN faint
+gmt set MAP_TICK_PEN 1p
+gmt set FORMAT_GEO_MAP=dddF
+gmt set PS_MEDIA A3
+gmt set PS_PAGE_ORIENTATION landscape
+    gmt subplot begin 3x1 -Fs8c/4c,6c,14c
+	###### Elevation Profile
+    gmt subplot set 0
+	gmt plot $file_topo -W2p,red -R$left/$right/-1000/1500 -J$Jtopo -BWSne -Bxaf+l"Distance (km)" -Bya+l"Elevation (m)"
+    	gmt plot -W1p,black -J$Jtopo << EOF
+0 0
+10000 0
+EOF
+	###### Lithosphere Structure
+    gmt subplot set 1
+    #gmt plot $fileBodies -Wthick,black -R$left/$right/-60/5 -J$Jcrust -BWSne -Bxa200f100g50+l"Distance (km)" -Bya10f5g5+l"Depth (m)"
+	gmt plot $fileBodies -Wthick,black -R$left/$right/-60/5 -J$Jcrust -BWsne -Bxaf -Byaf
+	###### Lithosphere Structure
+    gmt subplot set 2
+    high=405/$Xmax*39
+	echo $high
+    gmt plot $fileBodies -Wthick,black -R$left/$right/-400/5 -J$Jgraf -BWSne -Bxa200f100+l"Distance (km)" -Bya20f10+l"Depth (m)"
+    gmt subplot end
+
+
+gmt end
+
+
+#rm file*.tmp
+
+
