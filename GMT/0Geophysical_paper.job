@@ -1,0 +1,117 @@
+#!/bin/zsh
+#####################################################################
+#####   	Plot results from Globe model:			#####
+#####  		1- Topography					#####
+#####		2- Bouguer anomaly	 			#####
+#####  		3- geoid height					#####
+#####		4- heat flow					#####
+#####################################################################         
+##### 		Platform  :GMT6.3.0                   
+##### 		Version   :1.0                                         
+##### 		Date      :2021-05-14                                  
+##### 		Author    :wzhang                               
+##### 		Contact   :zhangwentaoucas@gmail.com                                
+#####################################################################
+
+###################    Setting
+fileout=0Geophysical # Outfile name
+
+# Location for profile
+cat > profile_info.tmp << EOF
+> Northern profile, -W2p,red
+9.695707058255012  42.31676840994488
+13.702926064359609  44.19370999714001
+14.164473684210527 44.97911832946636
+17.236842105263158 46.04176334106729
+21 47.343332819944656
+# > Southern profile, -W2p,blue
+# 9.846142637845389 40.04201216013787
+# 15.0046466370476 40.27182658868806
+# 19.38585180105976 43.55407763462379
+# 21.744322396357,43 4776808968905
+# 22.87236751620579 44.02975851857533
+EOF
+
+# Input grd file
+Topo=~/ownCloud/Data/Elevation/topo15_Med.grd			# topo15 
+region=5/25/39/50
+BG=~/ownCloud/Data/Gravity/Compared/FA2BOUG/bouguer_g.grd		# FA2BOUG 
+BG=~/ownCloud/Data/Gravity/FA2BOUG/MedSea/bouguer_g.grd
+FA=~/ownCloud/Data/Gravity/SIO/grav_29_Med.grd			# FA 
+Geo=~/ownCloud/Data/Geoid/CAMOS_zwt/Geoid_filtered_N10.grd    	# GECO			
+HF=~/ownCloud/Data/Heat_flow
+HFcpt=HF.cpt
+
+cat > $HFcpt << EOF
+0    	blue	80	white
+80	white	160	red
+160	red	240	red1
+EOF
+
+
+gmt begin $fileout pdf
+gmt set PS_MEDIA A4 # 21cm×29.7cm / 8.3 × 11.7 inch 
+
+gmt set MAP_FRAME_TYPE plain
+gmt set FONT 12p,2
+gmt set FONT_ANNOT_PRIMARY 10p,2
+
+gmt set MAP_GRID_PEN faint
+gmt set MAP_TICK_PEN 1p
+gmt set FORMAT_GEO_OUT=ddd:mmF
+
+gmt set PS_PAGE_ORIENTATION portrait
+gmt set COLOR_BACKGROUND darkblue
+gmt set COLOR_FOREGROUND red1
+    gmt subplot begin 2x2 -Fs3i -JM3i -R$region -A+g255/255/255 -M0.3c/0.6c
+	# Fig a) Elevation
+    gmt subplot set 0 -A'a) Elevation' 
+	gmt makecpt -Cglobe -T-5000/5000/10
+	# gmt basemap -R$region -Baf -BWseN+t""
+	gmt grdimage $Topo -C -R$region -Baf -BWseN+t""
+	gmt coast -N1/0.5p,white -Ia/0.15p,177/178/183 -I1/0.5p,61/99/172 -C81/174/254
+	gmt coast -Dh -W1/0.2p -I1/0.25p
+	gmt colorbar -DjBC+w3i/0.12i+o0c/-0.28i+m -C -G-4000/4000 -Bxaf -By+lm
+	gmt psxy profile_info.tmp 
+	
+    gmt subplot set 1 -A'b) Bouguer anomoly'
+    	# Fig b) Bouguer anomoly
+	gmt makecpt -Chaxby -T-300/300/1
+	gmt grdimage $BG -C -R$region -Baf -BwseN+t""
+	gmt coast -Dh -W1/0.2p
+	gmt grdcontour $BG -C50 -A50+f8p,black+g255/255/255 -W1/0/0/0
+	gmt colorbar -DjBC+w3i/0.12i+o0c/-0.28i+m -C -Bxa100f50 -By+lmGal
+	gmt psxy profile_info.tmp 
+	
+    gmt subplot set 2 -A'c) Geoid'
+	# Fig c) Geoid
+	gmt makecpt -Cjet -T-12/12/1
+	gmt grdimage $BG -C -R$region -Baf -BWsen+t""
+	gmt grdimage $Geo -C -Bwsen
+	gmt coast -Dh -W1/0.2p
+	gmt grdcontour $Geo -C4 -A4+f8p,black+g255/255/255 -W1/0/0/0
+	gmt colorbar -DjBC+w3i/0.12i+o0c/-0.28i+m -C -Bxa4f2 -By+lm
+	gmt psxy profile_info.tmp 
+	
+    gmt subplot set 3 -A'd) Surface heat flow'
+	# Fig d) Heat flow point topo:globe
+	# gmt makecpt -Cglobe -T-5000/5000/10
+	gmt makecpt -Cgray -T-10000/6000/10
+	gmt grdimage $Topo -C -R$region -Baf -Bwsen+t""
+	# gmt coast -N1/0.5p,white -Ia/0.15p,177/178/183 -I1/0.5p,61/99/172 -C81/174/254
+	gmt coast -Dh -W1/0.5p
+	# gmt makecpt -Cpolar -T0/160/1
+	#gawk '{print $2,$1,$3}' $HF/ThermoGlobe_21_05_20 | gmt psxy -C$HFcpt -Sc0.3c
+	#gawk '{print $1,$2,$3}' $HF/Geothopica | gmt psxy -C$HFcpt -Sc0.3c
+	awk -F';' '{print $6,$5,$2}' $HF/IHFC/IHFC_2021_GHFDB.csv | gmt psxy -C$HFcpt -Sc0.2c
+	awk -F, '$14!=NaN {print $1,$2,$14}' $HF/Geothopica/heat_flow_values.csv | gmt psxy -C$HFcpt -Sc0.2c
+	gmt colorbar -DjBC+w3i/0.12i+o0c/-0.28i+m -C$HFcpt -Bxa40f20 -By+lmW/m@+2@+ -G0/160
+	gmt psxy profile_info.tmp 
+	#echo 6.5 47.5 Topo | gmt text -F+f30p,1,red+a0
+	
+    gmt subplot end
+
+
+gmt end show
+
+rm *.tmp *.cpt
